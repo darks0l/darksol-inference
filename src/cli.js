@@ -19,12 +19,12 @@ export function createCli(deps = {}) {
 
   registerServeCommand(program, deps.serve);
   registerRunCommand(program, deps.run);
-  registerPullCommand(program);
+  registerPullCommand(program, deps.pull);
   registerListCommand(program, deps.list);
-  registerRmCommand(program);
-  registerPsCommand(program);
+  registerRmCommand(program, deps.rm);
+  registerPsCommand(program, deps.ps);
   registerInfoCommand(program, deps.info);
-  registerBrowseCommand(program);
+  registerBrowseCommand(program, deps.browse);
   registerStatusCommand(program, deps.status);
   registerSearchCommand(program);
 

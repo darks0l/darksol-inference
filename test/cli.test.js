@@ -318,3 +318,395 @@ test("info command prints installed metadata and runtime details", async () => {
   assert.ok(logs.some((line) => line === "Threads: 12"));
   assert.ok(logs.some((line) => line === "Context: 8192"));
 });
+
+test("pull command reports install success with deterministic spinner updates", async () => {
+  const events = [];
+  const cli = createCli({
+    pull: {
+      ensureModelInstalled: async (_model, { onProgress }) => {
+        onProgress({ downloaded: 50, total: 100, speed: 25, eta: 2 });
+        return { downloaded: true, metadata: { name: "llama-test", size: 100 } };
+      },
+      createSpinner: (text) => {
+        const spinner = {
+          text,
+          succeed(message) {
+            events.push({ kind: "succeed", message, text: spinner.text });
+          },
+          fail(message) {
+            events.push({ kind: "fail", message, text: spinner.text });
+          }
+        };
+        events.push({ kind: "start", text });
+        return spinner;
+      },
+      formatBytes: (value) => `${value}B`,
+      formatDuration: (value) => `${value}s`
+    }
+  });
+
+  await cli.parseAsync(["node", "darksol", "pull", "llama-3.2-3b"]);
+
+  assert.equal(events[0].kind, "start");
+  assert.equal(events[0].text, "Pulling llama-3.2-3b");
+  assert.equal(events[1].kind, "succeed");
+  assert.equal(
+    events[1].text,
+    "Pulling llama-3.2-3b 50.0% 50B/100B 25B/s ETA 2s"
+  );
+  assert.match(events[1].message, /^Installed /);
+  assert.match(events[1].message, /llama-test/);
+});
+
+test("pull command sets exit code on install failure", async () => {
+  const events = [];
+  let exitCode;
+  const cli = createCli({
+    pull: {
+      ensureModelInstalled: async () => {
+        throw new Error("network down");
+      },
+      createSpinner: (text) => {
+        const spinner = {
+          text,
+          succeed() {},
+          fail(message) {
+            events.push(message);
+          }
+        };
+        events.push(text);
+        return spinner;
+      },
+      setExitCode: (value) => {
+        exitCode = value;
+      }
+    }
+  });
+
+  await cli.parseAsync(["node", "darksol", "pull", "llama-3.2-3b"]);
+
+  assert.equal(exitCode, 1);
+  assert.equal(events[0], "Pulling llama-3.2-3b");
+  assert.equal(events[1], "Failed to pull llama-3.2-3b: network down");
+});
+
+test("rm command unloads removed model and logs success", async () => {
+  const logs = [];
+  const unloaded = [];
+  const cli = createCli({
+    rm: {
+      removeModel: async (model) => {
+        assert.equal(model, "llama-3.2-3b");
+        return "llama-test";
+      },
+      modelPool: {
+        unload: (name) => {
+          unloaded.push(name);
+        }
+      },
+      log: (line) => {
+        logs.push(line);
+      }
+    }
+  });
+
+  await cli.parseAsync(["node", "darksol", "rm", "llama-3.2-3b"]);
+
+  assert.deepEqual(unloaded, ["llama-test"]);
+  assert.equal(logs.length, 1);
+  assert.match(logs[0], /^Removed /);
+  assert.match(logs[0], /llama-test/);
+});
+
+test("rm command logs failure and sets exit code", async () => {
+  const errors = [];
+  let exitCode;
+  const cli = createCli({
+    rm: {
+      removeModel: async () => {
+        throw new Error("not installed");
+      },
+      modelPool: { unload() {} },
+      errorLog: (line) => {
+        errors.push(line);
+      },
+      setExitCode: (value) => {
+        exitCode = value;
+      }
+    }
+  });
+
+  await cli.parseAsync(["node", "darksol", "rm", "missing-model"]);
+
+  assert.equal(exitCode, 1);
+  assert.deepEqual(errors, ["Failed to remove missing-model: not installed"]);
+});
+
+test("ps command prints empty state when no models are loaded", async () => {
+  const logs = [];
+  const cli = createCli({
+    ps: {
+      modelPool: {
+        listLoaded() {
+          return [];
+        }
+      },
+      log: (line) => {
+        logs.push(line);
+      }
+    }
+  });
+
+  await cli.parseAsync(["node", "darksol", "ps"]);
+
+  assert.deepEqual(logs, ["No models loaded."]);
+});
+
+test("ps command renders loaded model table deterministically", async () => {
+  const logs = [];
+  const rows = [];
+  const cli = createCli({
+    ps: {
+      modelPool: {
+        listLoaded() {
+          return [
+            {
+              name: "llama-test",
+              size: 1024,
+              quant: "Q4_K_M",
+              gpuLayers: 24,
+              threads: 8,
+              lastUsed: "2026-03-08T00:00:00.000Z"
+            }
+          ];
+        }
+      },
+      createTable: () => ({
+        push(row) {
+          rows.push(row);
+        },
+        toString() {
+          return `rows=${rows.length}`;
+        }
+      }),
+      formatBytes: (value) => `${value}B`,
+      log: (line) => {
+        logs.push(line);
+      }
+    }
+  });
+
+  await cli.parseAsync(["node", "darksol", "ps"]);
+
+  assert.deepEqual(rows, [["llama-test", "1024B", "Q4_K_M", 24, 8, "2026-03-08T00:00:00.000Z"]]);
+  assert.deepEqual(logs, ["rows=1"]);
+});
+
+test("browse command renders rows and supports deterministic --pull flow", async () => {
+  const logs = [];
+  const rows = [];
+  const pulled = [];
+  const cli = createCli({
+    browse: {
+      browseModels: async ({ category, sort, limit }) => {
+        assert.equal(category, "chat");
+        assert.equal(sort, "downloads");
+        assert.equal(limit, 1);
+        return [
+          {
+            id: "meta-llama/Llama-3.2-3B-Instruct-GGUF",
+            downloads: 1234,
+            updatedAt: "2026-03-01T00:00:00.000Z",
+            tags: ["gguf", "text-generation", "chat", "llama"]
+          }
+        ];
+      },
+      ensureModelInstalled: async (id) => {
+        pulled.push(id);
+      },
+      createTable: () => ({
+        push(row) {
+          rows.push(row);
+        },
+        toString() {
+          return "browse-table";
+        }
+      }),
+      log: (line) => {
+        logs.push(line);
+      }
+    }
+  });
+
+  await cli.parseAsync([
+    "node",
+    "darksol",
+    "browse",
+    "--category",
+    "chat",
+    "--sort",
+    "downloads",
+    "--limit",
+    "1",
+    "--pull",
+    "1"
+  ]);
+
+  assert.deepEqual(rows, [[1, "meta-llama/Llama-3.2-3B-Instruct-GGUF", 1234, "2026-03-01", "gguf,text-generation,chat"]]);
+  assert.deepEqual(pulled, ["meta-llama/Llama-3.2-3B-Instruct-GGUF"]);
+  assert.deepEqual(logs, [
+    "browse-table",
+    "Pulling meta-llama/Llama-3.2-3B-Instruct-GGUF ...",
+    "Installed meta-llama/Llama-3.2-3B-Instruct-GGUF"
+  ]);
+});
+
+test("browse command sets exit code for invalid --pull index", async () => {
+  const errors = [];
+  let exitCode;
+  const cli = createCli({
+    browse: {
+      browseModels: async () => ([{ id: "model-1", downloads: 1, updatedAt: null, tags: [] }]),
+      createTable: () => ({
+        push() {},
+        toString() {
+          return "browse-table";
+        }
+      }),
+      log() {},
+      errorLog: (line) => {
+        errors.push(line);
+      },
+      setExitCode: (value) => {
+        exitCode = value;
+      }
+    }
+  });
+
+  await cli.parseAsync(["node", "darksol", "browse", "--pull", "2"]);
+
+  assert.equal(exitCode, 1);
+  assert.deepEqual(errors, ["Invalid pull index."]);
+});
+
+test("run command fails for ollama/<model> when provider is disabled", async () => {
+  const cli = createCli({
+    run: {
+      loadConfig: async () => ({ ollamaEnabled: false, ollamaBaseUrl: "http://127.0.0.1:11434" }),
+      createOllamaClient: () => ({
+        async listLocalModels() {
+          const err = new Error("Ollama provider is disabled.");
+          err.code = "ollama_disabled";
+          throw err;
+        }
+      })
+    }
+  });
+
+  await assert.rejects(
+    cli.parseAsync(["node", "darksol", "run", "ollama/llama3.2:latest", "hello"]),
+    /disabled/
+  );
+});
+
+test("run command fails for ollama/<model> when provider is offline", async () => {
+  const cli = createCli({
+    run: {
+      loadConfig: async () => ({ ollamaEnabled: true, ollamaBaseUrl: "http://127.0.0.1:11434" }),
+      createOllamaClient: () => ({
+        async listLocalModels() {
+          const err = new Error("Failed to connect to Ollama.");
+          err.code = "ollama_unreachable";
+          throw err;
+        }
+      })
+    }
+  });
+
+  await assert.rejects(
+    cli.parseAsync(["node", "darksol", "run", "ollama/llama3.2:latest", "hello"]),
+    /connect to Ollama/
+  );
+});
+
+test("run command fails for invalid local model", async () => {
+  const cli = createCli({
+    run: {
+      loadConfig: async () => ({ ollamaEnabled: true, ollamaBaseUrl: "http://127.0.0.1:11434" }),
+      ensureModelInstalled: async () => {
+        throw new Error("Model not installed: bankr/ghost-model");
+      }
+    }
+  });
+
+  await assert.rejects(
+    cli.parseAsync(["node", "darksol", "run", "bankr/ghost-model", "hello"]),
+    /Model not installed/
+  );
+});
+
+test("list command tolerates offline Ollama provider and prints local models only", async () => {
+  const logs = [];
+  const cli = createCli({
+    list: {
+      loadConfig: async () => ({ ollamaEnabled: true, ollamaBaseUrl: "http://127.0.0.1:11434" }),
+      createOllamaClient: () => ({
+        async listLocalModels() {
+          throw new Error("connect ECONNREFUSED");
+        }
+      }),
+      listInstalledModels: async () => ([
+        {
+          name: "llama-test",
+          size: 1_024_000_000,
+          quant: "Q4_K_M",
+          repo: "meta-llama/Llama-3.2-3B-Instruct"
+        }
+      ]),
+      modelPool: {
+        listLoaded() {
+          return [{ name: "llama-test" }];
+        }
+      },
+      log: (line) => {
+        logs.push(line);
+      }
+    }
+  });
+
+  await cli.parseAsync(["node", "darksol", "list"]);
+
+  assert.equal(logs.length, 1);
+  assert.match(logs[0], /llama-test/);
+  assert.doesNotMatch(logs[0], /ollama\//);
+});
+
+test("status command reports offline server when health endpoint is unreachable", async () => {
+  const logs = [];
+  const cli = createCli({
+    status: {
+      loadConfig: async () => ({ host: "127.0.0.1", port: 11435 }),
+      detectHardware: async () => ({
+        cpu: { brand: "Test CPU", physicalCores: 8 },
+        memory: { free: 8 * 1024 ** 3, total: 16 * 1024 ** 3 },
+        gpus: []
+      }),
+      getThermalStatus: async () => ({ main: null }),
+      modelPool: {
+        listLoaded() {
+          return [];
+        }
+      },
+      fetchImpl: async () => {
+        throw new Error("offline");
+      },
+      log: (line) => {
+        logs.push(line);
+      }
+    }
+  });
+
+  await cli.parseAsync(["node", "darksol", "status"]);
+
+  assert.ok(logs.some((line) => line.includes("Server: offline")));
+});

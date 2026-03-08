@@ -2,7 +2,16 @@ import Table from "cli-table3";
 import { browseModels } from "../models/directory.js";
 import { ensureModelInstalled } from "../models/manager.js";
 
-export function registerBrowseCommand(program) {
+export function registerBrowseCommand(program, deps = {}) {
+  const browseModelsFn = deps.browseModels || browseModels;
+  const ensureModelInstalledFn = deps.ensureModelInstalled || ensureModelInstalled;
+  const createTable = deps.createTable || ((options) => new Table(options));
+  const log = deps.log || console.log;
+  const errorLog = deps.errorLog || console.error;
+  const setExitCode = deps.setExitCode || ((value) => {
+    process.exitCode = value;
+  });
+
   program
     .command("browse")
     .description("Browse trending GGUF models on HuggingFace")
@@ -11,13 +20,13 @@ export function registerBrowseCommand(program) {
     .option("--limit <limit>", "max rows", "20")
     .option("--pull <index>", "download model at index")
     .action(async (options) => {
-      const models = await browseModels({
+      const models = await browseModelsFn({
         category: options.category,
         sort: options.sort,
         limit: Number(options.limit)
       });
 
-      const table = new Table({
+      const table = createTable({
         head: ["#", "Name", "Downloads", "Updated", "Tags"]
       });
 
@@ -31,20 +40,20 @@ export function registerBrowseCommand(program) {
         ]);
       });
 
-      console.log(table.toString());
+      log(table.toString());
 
       if (options.pull) {
         const index = Number(options.pull) - 1;
         const selected = models[index];
         if (!selected) {
-          console.error("Invalid pull index.");
-          process.exitCode = 1;
+          errorLog("Invalid pull index.");
+          setExitCode(1);
           return;
         }
 
-        console.log(`Pulling ${selected.id} ...`);
-        await ensureModelInstalled(selected.id);
-        console.log(`Installed ${selected.id}`);
+        log(`Pulling ${selected.id} ...`);
+        await ensureModelInstalledFn(selected.id);
+        log(`Installed ${selected.id}`);
       }
     });
 }
