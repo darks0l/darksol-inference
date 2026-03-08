@@ -90,6 +90,14 @@ Search HuggingFace model directory:
 node bin/darksol.js search "llama" --limit 5 --task text-generation
 ```
 
+Manage MCP server registry:
+
+```bash
+node bin/darksol.js mcp list
+node bin/darksol.js mcp enable CoinGecko
+node bin/darksol.js mcp disable CoinGecko
+```
+
 ## API
 
 Default base URL: `http://127.0.0.1:11435`
@@ -100,7 +108,11 @@ Default base URL: `http://127.0.0.1:11435`
 - `GET /v1/directory/models` - search HuggingFace model directory with `q`, `limit`, and `task`.
 - `GET /v1/bankr/health` - Bankr gateway scaffold status (`configured`/`sandbox`) without secrets.
 - `GET /v1/app/meta` - app shell bootstrap metadata (name/version/routes + branding + desktop/web scaffold references).
+- `GET /v1/mcp/servers` - list configured MCP servers.
+- `POST /v1/mcp/servers/:name/enable` - enable an MCP server.
+- `POST /v1/mcp/servers/:name/disable` - disable an MCP server.
 - `POST /v1/chat/completions` - OpenAI-compatible chat completions.
+  - MCP integration foundation: if enabled MCP servers expose tool schemas, DARKSOL injects OpenAI-compatible tool definitions into Ollama chat requests, executes returned tool calls against configured MCP endpoints, appends tool results, and continues completion in a bounded multi-turn loop.
 - `POST /v1/completions` - OpenAI-compatible text completions.
   - Provider policy: explicit `ollama/<model>` ids always use Ollama; unprefixed model ids prefer local DARKSOL models and fall back to Ollama only when the local model is not installed and Ollama is enabled.
   - Runtime policy: both inference routes share a request queue with configurable concurrency (`inferenceConcurrency`, default `1`) plus provider timeout/retry guards (`providerTimeoutMs`, default `15000`; `providerRetryCount`, default `1` retry for transient errors).
@@ -228,6 +240,10 @@ Route inventory and OpenAPI sync:
 - `BANKR_SANDBOX` (optional, default `true`): mark Bankr client as sandbox mode.
 - `DARKSOL_OLLAMA_ENABLED` (optional, default `true`): enable/disable Ollama interoperability.
 - `DARKSOL_OLLAMA_BASE_URL` (optional, default `http://127.0.0.1:11434`): Ollama HTTP endpoint.
+
+MCP registry file (created on first MCP command/API use):
+
+- `~/.darksol/mcp-servers.json`
 
 `~/.darksol/config.json` runtime controls (optional):
 
