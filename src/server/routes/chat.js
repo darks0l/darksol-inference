@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { chatCompletion } from "../../engine/inference.js";
 import { modelPool } from "../../engine/pool.js";
+import { handleRouteError, openAIError } from "./errors.js";
 
 export async function registerChatRoutes(fastify) {
   fastify.post("/v1/chat/completions", async (request, reply) => {
@@ -13,75 +14,79 @@ export async function registerChatRoutes(fastify) {
     } = request.body || {};
 
     if (!model) {
-      return reply.code(400).send({ error: { message: "model is required", type: "invalid_request_error" } });
+      return openAIError(reply, 400, "model is required", "invalid_request_error", "model_required");
     }
 
-    const poolItem = await modelPool.load(model);
-    const id = `chatcmpl-${crypto.randomUUID()}`;
-    const created = Math.floor(Date.now() / 1000);
+    try {
+      const poolItem = await modelPool.load(model);
+      const id = `chatcmpl-${crypto.randomUUID()}`;
+      const created = Math.floor(Date.now() / 1000);
 
-    if (stream) {
-      reply.raw.writeHead(200, {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        Connection: "keep-alive"
-      });
+      if (stream) {
+        reply.raw.writeHead(200, {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          Connection: "keep-alive"
+        });
 
-      await chatCompletion({
+        await chatCompletion({
+          context: poolItem.context,
+          messages,
+          stream: true,
+          maxTokens,
+          temperature,
+          onTextChunk: (chunk) => {
+            const payload = {
+              id,
+              object: "chat.completion.chunk",
+              created,
+              model,
+              choices: [{ index: 0, delta: { content: chunk }, finish_reason: null }]
+            };
+            reply.raw.write(`data: ${JSON.stringify(payload)}\n\n`);
+          }
+        });
+
+        const donePayload = {
+          id,
+          object: "chat.completion.chunk",
+          created,
+          model,
+          choices: [{ index: 0, delta: {}, finish_reason: "stop" }]
+        };
+        reply.raw.write(`data: ${JSON.stringify(donePayload)}\n\n`);
+        reply.raw.write("data: [DONE]\n\n");
+        reply.raw.end();
+        return reply;
+      }
+
+      const text = await chatCompletion({
         context: poolItem.context,
         messages,
-        stream: true,
         maxTokens,
-        temperature,
-        onTextChunk: (chunk) => {
-          const payload = {
-            id,
-            object: "chat.completion.chunk",
-            created,
-            model,
-            choices: [{ index: 0, delta: { content: chunk }, finish_reason: null }]
-          };
-          reply.raw.write(`data: ${JSON.stringify(payload)}\n\n`);
-        }
+        temperature
       });
 
-      const donePayload = {
+      return {
         id,
-        object: "chat.completion.chunk",
+        object: "chat.completion",
         created,
         model,
-        choices: [{ index: 0, delta: {}, finish_reason: "stop" }]
-      };
-      reply.raw.write(`data: ${JSON.stringify(donePayload)}\n\n`);
-      reply.raw.write("data: [DONE]\n\n");
-      reply.raw.end();
-      return reply;
-    }
-
-    const text = await chatCompletion({
-      context: poolItem.context,
-      messages,
-      maxTokens,
-      temperature
-    });
-
-    return {
-      id,
-      object: "chat.completion",
-      created,
-      model,
-      choices: [
-        {
-          index: 0,
-          message: { role: "assistant", content: text },
-          finish_reason: "stop"
+        choices: [
+          {
+            index: 0,
+            message: { role: "assistant", content: text },
+            finish_reason: "stop"
+          }
+        ],
+        usage: {
+          prompt_tokens: 0,
+          completion_tokens: 0,
+          total_tokens: 0
         }
-      ],
-      usage: {
-        prompt_tokens: 0,
-        completion_tokens: 0,
-        total_tokens: 0
-      }
-    };
+      };
+    } catch (error) {
+      return handleRouteError(reply, error, model);
+    }
   });
 }
