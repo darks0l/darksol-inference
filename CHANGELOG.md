@@ -7,7 +7,9 @@
 - HuggingFace GGUF model browser and downloader
 - Hardware detection and inference optimization
 
-## Unreleased
+## 0.1.1
+- Packaging hardening: added npm `files` allowlist to ship only runtime CLI/app assets (trimmed tarball footprint and excluded dev/docs/test workflows).
+- Phase 7 quality: expanded deterministic CLI + provider error-path coverage (`pull`, `rm`, `ps`, `browse`, and run/list/status offline/invalid states).
 - Phase 7 kickoff: added `darksol run <model> [prompt...]` one-shot mode for both local and `ollama/<model>` targets while preserving interactive chat mode.
 - Phase 7 kickoff: expanded CLI tests to cover one-shot local + Ollama run flows with deterministic dependency stubs.
 - Phase 6: added Ollama provider client with configurable base URL (`DARKSOL_OLLAMA_BASE_URL` / config `ollamaBaseUrl`) and enable flag (`DARKSOL_OLLAMA_ENABLED` / config `ollamaEnabled`).

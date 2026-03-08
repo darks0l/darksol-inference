@@ -1,6 +1,6 @@
 {
   "name": "darksol",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Local LLM inference server with cloud gateway fallback, model directory, and hardware-aware optimization",
   "main": "src/cli.js",
   "type": "module",
@@ -46,7 +46,18 @@
     "sharp": "^0.34.4",
     "typescript": "^5.8.2"
   },
-  "keywords": ["llm", "inference", "local-ai", "ollama", "gguf", "llama.cpp", "gpu", "cli", "ai", "darksol"],
+  "keywords": [
+    "llm",
+    "inference",
+    "local-ai",
+    "ollama",
+    "gguf",
+    "llama.cpp",
+    "gpu",
+    "cli",
+    "ai",
+    "darksol"
+  ],
   "author": "Darksol <chris00claw@gmail.com>",
   "license": "MIT",
   "repository": {
