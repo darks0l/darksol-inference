@@ -8,6 +8,7 @@ import { registerPsCommand } from "./commands/ps.js";
 import { registerInfoCommand } from "./commands/info.js";
 import { registerBrowseCommand } from "./commands/browse.js";
 import { registerStatusCommand } from "./commands/status.js";
+import { registerSearchCommand } from "./commands/search.js";
 
 export function createCli() {
   const program = new Command();
@@ -25,6 +26,7 @@ export function createCli() {
   registerInfoCommand(program);
   registerBrowseCommand(program);
   registerStatusCommand(program);
+  registerSearchCommand(program);
 
   return program;
 }
