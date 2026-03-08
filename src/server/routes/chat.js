@@ -5,6 +5,9 @@ import { createOllamaClient, isOllamaModelId, toOllamaModelName } from "../../pr
 import { estimateMessageTokens, estimateTokens, recordInferenceUsage } from "../../lib/cost-tracker.js";
 import { handleRouteError, isModelNotInstalledError, openAIError } from "./errors.js";
 import { createProviderInvoker, createRequestQueue } from "../inference-controls.js";
+import { createMcpRegistry } from "../../mcp/registry.js";
+import { createMcpExecutor } from "../../mcp/executor.js";
+import { buildOpenAITools, hasEnabledTools } from "../../mcp/tool-injector.js";
 
 function setupSse(reply) {
   reply.raw.writeHead(200, {
@@ -46,13 +49,16 @@ async function respondFromOllama({
   invokeProvider,
   estimateTokensFn,
   estimateMessageTokensFn,
-  recordInferenceUsageFn
+  recordInferenceUsageFn,
+  mcp
 }) {
   const ollamaModel = isOllamaModelId(model) ? toOllamaModelName(model) : model;
   const apiModelId = isOllamaModelId(model) ? model : `ollama/${model}`;
   const id = `chatcmpl-${crypto.randomUUID()}`;
   const created = Math.floor(Date.now() / 1000);
   const promptTokens = estimateMessageTokensFn(messages);
+  const hasMcpTools = !stream && mcp?.enabled && hasEnabledTools(mcp.servers);
+  const injectedTools = hasMcpTools ? buildOpenAITools(mcp.servers) : [];
 
   if (stream) {
     setupSse(reply);
@@ -100,13 +106,52 @@ async function respondFromOllama({
     return reply;
   }
 
-  const text = await invokeProvider(() =>
-    client.chat({
-      model: ollamaModel,
-      messages,
-      stream: false
-    })
-  );
+  let finalContent = "";
+  let completionMessage = null;
+
+  if (hasMcpTools) {
+    const conversation = [...messages];
+    const maxToolRounds = mcp.maxToolRounds || 6;
+
+    for (let round = 0; round < maxToolRounds; round += 1) {
+      completionMessage = await invokeProvider(() =>
+        client.chat({
+          model: ollamaModel,
+          messages: conversation,
+          stream: false,
+          tools: injectedTools,
+          returnMessage: true
+        })
+      );
+
+      const toolCalls = Array.isArray(completionMessage?.tool_calls) ? completionMessage.tool_calls : [];
+      if (toolCalls.length === 0) {
+        finalContent = completionMessage?.content || "";
+        break;
+      }
+
+      conversation.push({
+        role: completionMessage.role || "assistant",
+        content: completionMessage.content || "",
+        tool_calls: toolCalls
+      });
+
+      for (const toolCall of toolCalls) {
+        const toolResult = await mcp.executor.executeToolCall({ toolCall, servers: mcp.servers });
+        conversation.push(toolResult.toolMessage);
+      }
+    }
+  } else {
+    finalContent = await invokeProvider(() =>
+      client.chat({
+        model: ollamaModel,
+        messages,
+        stream: false
+      })
+    );
+  }
+
+  const text = finalContent || completionMessage?.content || "";
   const completionTokens = estimateTokensFn(text);
 
   await safelyRecordUsage(recordInferenceUsageFn, {
@@ -137,7 +182,16 @@ async function respondFromOllama({
 
 export async function registerChatRoutes(
   fastify,
-  { ollamaClient, requestQueue, providerInvoker, estimateTokensFn, estimateMessageTokensFn, recordInferenceUsageFn } = {}
+  {
+    ollamaClient,
+    requestQueue,
+    providerInvoker,
+    estimateTokensFn,
+    estimateMessageTokensFn,
+    recordInferenceUsageFn,
+    mcpRegistry,
+    mcpExecutor
+  } = {}
 ) {
   const client = ollamaClient || createOllamaClient();
   const queue = requestQueue || createRequestQueue();
@@ -145,6 +199,8 @@ export async function registerChatRoutes(
   const estimateTokensImpl = estimateTokensFn || estimateTokens;
   const estimateMessageTokensImpl = estimateMessageTokensFn || estimateMessageTokens;
   const recordUsageImpl = recordInferenceUsageFn || recordInferenceUsage;
+  const registry = mcpRegistry || createMcpRegistry();
+  const executor = mcpExecutor || createMcpExecutor();
 
   fastify.post("/v1/chat/completions", async (request, reply) => {
     return queue.enqueue(async () => {
@@ -171,6 +227,19 @@ export async function registerChatRoutes(
       }
 
       try {
+        let mcpServers = [];
+        try {
+          mcpServers = await registry.list();
+        } catch {
+          mcpServers = [];
+        }
+        const mcpContext = {
+          enabled: true,
+          servers: mcpServers,
+          executor,
+          maxToolRounds: 6
+        };
+
         if (isOllamaModelId(model)) {
           return await respondFromOllama({
             reply,
@@ -182,7 +251,8 @@ export async function registerChatRoutes(
             invokeProvider,
             estimateTokensFn: estimateTokensImpl,
             estimateMessageTokensFn: estimateMessageTokensImpl,
-            recordInferenceUsageFn: recordUsageImpl
+            recordInferenceUsageFn: recordUsageImpl,
+            mcp: mcpContext
           });
         }
 
@@ -201,7 +271,8 @@ export async function registerChatRoutes(
               invokeProvider,
               estimateTokensFn: estimateTokensImpl,
               estimateMessageTokensFn: estimateMessageTokensImpl,
-              recordInferenceUsageFn: recordUsageImpl
+              recordInferenceUsageFn: recordUsageImpl,
+              mcp: mcpContext
             });
           }
           throw error;

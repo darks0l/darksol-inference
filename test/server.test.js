@@ -210,6 +210,48 @@ test("GET /v1/app/usage returns accumulated usage totals", async () => {
   );
 });
 
+test("GET /v1/mcp/servers returns configured MCP servers", async () => {
+  const registry = {
+    async list() {
+      return [{ name: "CoinGecko", enabled: false, endpoint: "https://api.coingecko.com/mcp", toolsSchema: [] }];
+    },
+    async setEnabled() {}
+  };
+
+  await withTempServer({ mcpRegistry: registry }, async (tempBaseUrl) => {
+    const response = await fetch(`${tempBaseUrl}/v1/mcp/servers`);
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(body.object, "list");
+    assert.equal(body.data.length, 1);
+    assert.equal(body.data[0].name, "CoinGecko");
+  });
+});
+
+test("POST /v1/mcp/servers/:name/enable toggles server state", async () => {
+  const toggles = [];
+  const registry = {
+    async list() {
+      return [];
+    },
+    async setEnabled(name, enabled) {
+      toggles.push({ name, enabled });
+    }
+  };
+
+  await withTempServer({ mcpRegistry: registry }, async (tempBaseUrl) => {
+    const response = await fetch(`${tempBaseUrl}/v1/mcp/servers/CoinGecko/enable`, {
+      method: "POST"
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(body.enabled, true);
+    assert.deepEqual(toggles, [{ name: "CoinGecko", enabled: true }]);
+  });
+});
+
 test("GET /web/index.html serves static shell HTML", async () => {
   const response = await fetch(`${baseUrl}/web/index.html`);
   const body = await response.text();
@@ -430,6 +472,103 @@ test("POST /v1/chat/completions falls back to ollama for unprefixed missing loca
     assert.equal(body.model, "ollama/llama3.2:latest");
     assert.equal(body.choices?.[0]?.message?.content, "fallback chat");
   });
+});
+
+test("POST /v1/chat/completions executes MCP tool calls and continues completion loop", async () => {
+  let chatAttempts = 0;
+  const ollamaFetchImpl = async (url, init) => {
+    if (String(url).endsWith("/api/chat")) {
+      chatAttempts += 1;
+      const body = JSON.parse(init.body);
+
+      if (chatAttempts === 1) {
+        assert.ok(Array.isArray(body.tools));
+        assert.equal(body.tools[0].function.name, "CoinGecko__price_lookup");
+        return {
+          ok: true,
+          async json() {
+            return {
+              message: {
+                role: "assistant",
+                content: "",
+                tool_calls: [
+                  {
+                    id: "tool-call-1",
+                    function: {
+                      name: "CoinGecko__price_lookup",
+                      arguments: "{\"symbol\":\"SOL\"}"
+                    }
+                  }
+                ]
+              }
+            };
+          }
+        };
+      }
+
+      assert.ok(body.messages.some((message) => message.role === "tool"));
+      return {
+        ok: true,
+        async json() {
+          return { message: { role: "assistant", content: "SOL is 123.45 USD" } };
+        }
+      };
+    }
+    throw new Error(`unexpected url: ${url}`);
+  };
+
+  const mcpRegistry = {
+    async list() {
+      return [
+        {
+          name: "CoinGecko",
+          enabled: true,
+          endpoint: "https://mock.mcp.local",
+          toolsSchema: [
+            {
+              name: "price_lookup",
+              description: "Lookup token price",
+              input_schema: { type: "object", properties: { symbol: { type: "string" } } }
+            }
+          ],
+          auth: { type: "none" }
+        }
+      ];
+    }
+  };
+
+  const mcpExecutor = {
+    async executeToolCall({ toolCall }) {
+      assert.equal(toolCall.function.name, "CoinGecko__price_lookup");
+      return {
+        result: { symbol: "SOL", usd: 123.45 },
+        toolMessage: {
+          role: "tool",
+          tool_call_id: toolCall.id,
+          name: toolCall.function.name,
+          content: "{\"symbol\":\"SOL\",\"usd\":123.45}"
+        }
+      };
+    }
+  };
+
+  await withTempServer(
+    { ollamaEnabled: true, ollamaFetchImpl, mcpRegistry, mcpExecutor },
+    async (tempBaseUrl) => {
+      const response = await fetch(`${tempBaseUrl}/v1/chat/completions`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          model: "ollama/llama3.2:latest",
+          messages: [{ role: "user", content: "what is sol price?" }]
+        })
+      });
+      const body = await response.json();
+
+      assert.equal(response.status, 200);
+      assert.equal(body.choices?.[0]?.message?.content, "SOL is 123.45 USD");
+    }
+  );
 });
 
 test("POST /v1/chat/completions streams SSE chunks for Ollama chat", async () => {

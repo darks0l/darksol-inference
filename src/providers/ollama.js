@@ -121,12 +121,13 @@ export class OllamaClient {
     return payload?.response || "";
   }
 
-  async chat({ model, messages, stream = false, options, onTextChunk, signal }) {
+  async chat({ model, messages, stream = false, options, tools, returnMessage = false, onTextChunk, signal }) {
     const requestBody = {
       model,
       messages,
       stream,
-      options
+      options,
+      ...(Array.isArray(tools) && tools.length > 0 ? { tools } : {})
     };
 
     if (stream) {
@@ -145,6 +146,10 @@ export class OllamaClient {
       headers: { "content-type": "application/json" },
       signal
     });
+
+    if (returnMessage) {
+      return payload?.message || { role: "assistant", content: "" };
+    }
 
     return payload?.message?.content || "";
   }

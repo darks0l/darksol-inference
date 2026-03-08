@@ -11,6 +11,7 @@ import { registerHealthRoutes } from "./routes/health.js";
 import { registerDirectoryRoutes } from "./routes/directory.js";
 import { registerBankrRoutes } from "./routes/bankr.js";
 import { registerAppRoutes } from "./routes/app.js";
+import { registerMcpRoutes } from "./routes/mcp.js";
 import { logger } from "../lib/logger.js";
 import { loadConfig } from "../lib/config.js";
 import { createOllamaClient } from "../providers/ollama.js";
@@ -43,7 +44,9 @@ export async function buildServer({
   timers,
   detectHardwareFn,
   readUsageStatsFn,
-  recordInferenceUsageFn
+  recordInferenceUsageFn,
+  mcpRegistry,
+  mcpExecutor
 } = {}) {
   const runtimeConfig = await loadConfig();
   const resolvedOllamaEnabled = ollamaEnabled ?? runtimeConfig.ollamaEnabled;
@@ -98,12 +101,15 @@ export async function buildServer({
   await registerModelsRoutes(fastify, { ollamaClient });
   await registerDirectoryRoutes(fastify, { fetchImpl, detectHardwareFn });
   await registerBankrRoutes(fastify);
+  await registerMcpRoutes(fastify, { mcpRegistry });
   await registerAppRoutes(fastify, { readUsageStats: readUsageStatsFn });
   await registerChatRoutes(fastify, {
     ollamaClient,
     requestQueue: sharedRequestQueue,
     providerInvoker: sharedProviderInvoker,
-    recordInferenceUsageFn
+    recordInferenceUsageFn,
+    mcpRegistry,
+    mcpExecutor
   });
   await registerCompletionsRoutes(fastify, {
     ollamaClient,
@@ -132,7 +138,9 @@ export async function startServer({
   timers,
   detectHardwareFn,
   readUsageStatsFn,
-  recordInferenceUsageFn
+  recordInferenceUsageFn,
+  mcpRegistry,
+  mcpExecutor
 } = {}) {
   const server = await buildServer({
     apiKey,
@@ -148,7 +156,9 @@ export async function startServer({
     timers,
     detectHardwareFn,
     readUsageStatsFn,
-    recordInferenceUsageFn
+    recordInferenceUsageFn,
+    mcpRegistry,
+    mcpExecutor
   });
   await server.listen({ host, port });
   await logger.info("server_started", { host, port });

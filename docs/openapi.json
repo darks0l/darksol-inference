@@ -258,6 +258,86 @@
         ]
       }
     },
+    "/v1/mcp/servers": {
+      "get": {
+        "summary": "List configured MCP servers",
+        "responses": {
+          "200": {
+            "description": "MCP server list"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/mcp/servers/{name}/enable": {
+      "post": {
+        "summary": "Enable a configured MCP server",
+        "responses": {
+          "200": {
+            "description": "MCP server enabled"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          },
+          "404": {
+            "description": "MCP server not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/mcp/servers/{name}/disable": {
+      "post": {
+        "summary": "Disable a configured MCP server",
+        "responses": {
+          "200": {
+            "description": "MCP server disabled"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          },
+          "404": {
+            "description": "MCP server not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
     "/v1/chat/completions": {
       "post": {
         "summary": "OpenAI-compatible chat completions",

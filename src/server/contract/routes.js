@@ -166,6 +166,58 @@ export const ROUTE_CONTRACT = [
     }
   },
   {
+    method: "GET",
+    path: "/v1/mcp/servers",
+    summary: "List configured MCP servers",
+    auth: "bearer",
+    responses: {
+      200: "MCP server list",
+      401: "Missing or invalid API key"
+    }
+  },
+  {
+    method: "POST",
+    path: "/v1/mcp/servers/{name}/enable",
+    summary: "Enable a configured MCP server",
+    auth: "bearer",
+    parameters: [
+      {
+        name: "name",
+        in: "path",
+        required: true,
+        schema: {
+          type: "string"
+        }
+      }
+    ],
+    responses: {
+      200: "MCP server enabled",
+      401: "Missing or invalid API key",
+      404: "MCP server not found"
+    }
+  },
+  {
+    method: "POST",
+    path: "/v1/mcp/servers/{name}/disable",
+    summary: "Disable a configured MCP server",
+    auth: "bearer",
+    parameters: [
+      {
+        name: "name",
+        in: "path",
+        required: true,
+        schema: {
+          type: "string"
+        }
+      }
+    ],
+    responses: {
+      200: "MCP server disabled",
+      401: "Missing or invalid API key",
+      404: "MCP server not found"
+    }
+  },
+  {
     method: "POST",
     path: "/v1/chat/completions",
     summary: "OpenAI-compatible chat completions",
