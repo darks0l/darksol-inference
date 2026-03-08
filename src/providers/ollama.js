@@ -1,6 +1,22 @@
 const DEFAULT_OLLAMA_BASE_URL = "http://127.0.0.1:11434";
 const DEFAULT_TIMEOUT_MS = 4000;
 
+function mergeAbortSignals(externalSignal, timeoutSignal) {
+  if (!externalSignal) {
+    return timeoutSignal;
+  }
+
+  if (externalSignal.aborted || timeoutSignal.aborted) {
+    return AbortSignal.abort();
+  }
+
+  const merged = new AbortController();
+  const abortMerged = () => merged.abort();
+  externalSignal.addEventListener("abort", abortMerged, { once: true });
+  timeoutSignal.addEventListener("abort", abortMerged, { once: true });
+  return merged.signal;
+}
+
 export class OllamaError extends Error {
   constructor(message, { status = 500, code = "ollama_error", cause } = {}) {
     super(message);
@@ -78,7 +94,7 @@ export class OllamaClient {
     }));
   }
 
-  async generate({ model, prompt, stream = false, options, onTextChunk }) {
+  async generate({ model, prompt, stream = false, options, onTextChunk, signal }) {
     const requestBody = {
       model,
       prompt,
@@ -93,18 +109,19 @@ export class OllamaClient {
           onTextChunk(chunk);
         }
         return chunk;
-      });
+      }, signal);
     }
 
     const payload = await this.#requestJson("/api/generate", {
       method: "POST",
       body: JSON.stringify(requestBody),
-      headers: { "content-type": "application/json" }
+      headers: { "content-type": "application/json" },
+      signal
     });
     return payload?.response || "";
   }
 
-  async chat({ model, messages, stream = false, options, onTextChunk }) {
+  async chat({ model, messages, stream = false, options, onTextChunk, signal }) {
     const requestBody = {
       model,
       messages,
@@ -119,13 +136,14 @@ export class OllamaClient {
           onTextChunk(chunk);
         }
         return chunk;
-      });
+      }, signal);
     }
 
     const payload = await this.#requestJson("/api/chat", {
       method: "POST",
       body: JSON.stringify(requestBody),
-      headers: { "content-type": "application/json" }
+      headers: { "content-type": "application/json" },
+      signal
     });
 
     return payload?.message?.content || "";
@@ -136,13 +154,14 @@ export class OllamaClient {
       throw new OllamaError("Ollama provider is disabled.", { status: 400, code: "ollama_disabled" });
     }
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
+    const timeoutController = new AbortController();
+    const timeout = setTimeout(() => timeoutController.abort(), this.timeoutMs);
+    const signal = mergeAbortSignals(init.signal, timeoutController.signal);
 
     try {
       const response = await this.fetchImpl(`${this.baseUrl}${path}`, {
         ...init,
-        signal: controller.signal
+        signal
       });
 
       if (!response.ok) {
@@ -173,20 +192,21 @@ export class OllamaClient {
     }
   }
 
-  async #streamJsonLines(path, requestBody, onObjectChunk) {
+  async #streamJsonLines(path, requestBody, onObjectChunk, externalSignal) {
     if (!this.enabled) {
       throw new OllamaError("Ollama provider is disabled.", { status: 400, code: "ollama_disabled" });
     }
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
+    const timeoutController = new AbortController();
+    const timeout = setTimeout(() => timeoutController.abort(), this.timeoutMs);
+    const signal = mergeAbortSignals(externalSignal, timeoutController.signal);
 
     try {
       const response = await this.fetchImpl(`${this.baseUrl}${path}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(requestBody),
-        signal: controller.signal
+        signal
       });
 
       if (!response.ok) {
@@ -203,7 +223,7 @@ export class OllamaClient {
 
       for await (const chunk of response.body) {
         buffered += decoder.decode(chunk, { stream: true });
-        const lines = buffered.split("\n");
+        const lines = buffered.split(/\r?\n/);
         buffered = lines.pop() || "";
 
         for (const line of lines) {

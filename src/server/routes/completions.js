@@ -1,22 +1,41 @@
 import crypto from "node:crypto";
-import { textCompletion } from "../../engine/inference.js";
+import { textCompletion, textCompletionStream } from "../../engine/inference.js";
 import { modelPool } from "../../engine/pool.js";
 import { createOllamaClient, isOllamaModelId, toOllamaModelName } from "../../providers/ollama.js";
 import { handleRouteError, isModelNotInstalledError, openAIError } from "./errors.js";
 import { createProviderInvoker, createRequestQueue } from "../inference-controls.js";
 
-async function respondFromOllama({ reply, client, model, prompt, stream, invokeProvider }) {
+function setupSse(reply) {
+  reply.raw.writeHead(200, {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache, no-transform",
+    Connection: "keep-alive",
+    "X-Accel-Buffering": "no"
+  });
+  if (typeof reply.raw.flushHeaders === "function") {
+    reply.raw.flushHeaders();
+  }
+}
+
+function writeSse(reply, payload) {
+  reply.raw.write(`data: ${JSON.stringify(payload)}\n\n`);
+}
+
+function createRequestAbortSignal(rawRequest) {
+  const controller = new AbortController();
+  rawRequest.on("close", () => controller.abort(new Error("client_disconnected")));
+  return controller.signal;
+}
+
+async function respondFromOllama({ reply, request, client, model, prompt, stream, invokeProvider }) {
   const ollamaModel = isOllamaModelId(model) ? toOllamaModelName(model) : model;
   const apiModelId = isOllamaModelId(model) ? model : `ollama/${model}`;
   const id = `cmpl-${crypto.randomUUID()}`;
   const created = Math.floor(Date.now() / 1000);
 
   if (stream) {
-    reply.raw.writeHead(200, {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
-      Connection: "keep-alive"
-    });
+    setupSse(reply);
+    const signal = createRequestAbortSignal(request.raw);
 
     await invokeProvider(
       () =>
@@ -24,6 +43,7 @@ async function respondFromOllama({ reply, client, model, prompt, stream, invokeP
           model: ollamaModel,
           prompt,
           stream: true,
+          signal,
           onTextChunk: (chunk) => {
             const payload = {
               id,
@@ -32,12 +52,19 @@ async function respondFromOllama({ reply, client, model, prompt, stream, invokeP
               model: apiModelId,
               choices: [{ index: 0, text: chunk, finish_reason: null }]
             };
-            reply.raw.write(`data: ${JSON.stringify(payload)}\n\n`);
+            writeSse(reply, payload);
           }
         }),
       { allowRetry: false }
     );
 
+    writeSse(reply, {
+      id,
+      object: "text_completion",
+      created,
+      model: apiModelId,
+      choices: [{ index: 0, text: "", finish_reason: "stop" }]
+    });
     reply.raw.write("data: [DONE]\n\n");
     reply.raw.end();
     return reply;
@@ -87,7 +114,7 @@ export async function registerCompletionsRoutes(
 
       try {
         if (isOllamaModelId(model)) {
-          return await respondFromOllama({ reply, client, model, prompt, stream, invokeProvider });
+          return await respondFromOllama({ reply, request, client, model, prompt, stream, invokeProvider });
         }
 
         let poolItem;
@@ -95,7 +122,7 @@ export async function registerCompletionsRoutes(
           poolItem = await modelPool.load(model);
         } catch (error) {
           if (client.enabled && isModelNotInstalledError(error)) {
-            return await respondFromOllama({ reply, client, model, prompt, stream, invokeProvider });
+            return await respondFromOllama({ reply, request, client, model, prompt, stream, invokeProvider });
           }
           throw error;
         }
@@ -104,34 +131,38 @@ export async function registerCompletionsRoutes(
         const created = Math.floor(Date.now() / 1000);
 
         if (stream) {
-          reply.raw.writeHead(200, {
-            "Content-Type": "text/event-stream",
-            "Cache-Control": "no-cache",
-            Connection: "keep-alive"
-          });
+          setupSse(reply);
+          const signal = createRequestAbortSignal(request.raw);
 
           await invokeProvider(
-            () =>
-              textCompletion({
+            async () => {
+              for await (const chunk of textCompletionStream({
                 context: poolItem.context,
                 prompt,
-                stream: true,
                 maxTokens,
                 temperature,
-                onTextChunk: (chunk) => {
-                  const payload = {
-                    id,
-                    object: "text_completion",
-                    created,
-                    model,
-                    choices: [{ index: 0, text: chunk, finish_reason: null }]
-                  };
-                  reply.raw.write(`data: ${JSON.stringify(payload)}\n\n`);
-                }
-              }),
+                signal
+              })) {
+                const payload = {
+                  id,
+                  object: "text_completion",
+                  created,
+                  model,
+                  choices: [{ index: 0, text: chunk, finish_reason: null }]
+                };
+                writeSse(reply, payload);
+              }
+            },
             { allowRetry: false }
           );
 
+          writeSse(reply, {
+            id,
+            object: "text_completion",
+            created,
+            model,
+            choices: [{ index: 0, text: "", finish_reason: "stop" }]
+          });
           reply.raw.write("data: [DONE]\n\n");
           reply.raw.end();
           return reply;

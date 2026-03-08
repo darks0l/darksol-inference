@@ -4,7 +4,7 @@ import path from "node:path";
 import chalk from "chalk";
 import { ensureModelInstalled } from "../models/manager.js";
 import { modelPool } from "../engine/pool.js";
-import { chatCompletion } from "../engine/inference.js";
+import { chatCompletion, chatCompletionStream } from "../engine/inference.js";
 import { isOllamaModelId, toOllamaModelId, toOllamaModelName } from "../providers/ollama.js";
 import { discoverOllamaLocalModels, resolveOllamaLocalModel } from "../providers/ollama-local.js";
 
@@ -12,6 +12,7 @@ export function registerRunCommand(program, deps = {}) {
   const ensureModelInstalledFn = deps.ensureModelInstalled || ensureModelInstalled;
   const modelPoolApi = deps.modelPool || modelPool;
   const chatCompletionFn = deps.chatCompletion || chatCompletion;
+  const chatCompletionStreamFn = deps.chatCompletionStream || chatCompletionStream;
   const discoverOllamaLocalModelsFn = deps.discoverOllamaLocalModels || discoverOllamaLocalModels;
   const resolveOllamaLocalModelFn = deps.resolveOllamaLocalModel || resolveOllamaLocalModel;
 
@@ -116,15 +117,13 @@ export function registerRunCommand(program, deps = {}) {
         output.write(chalk.magenta("assistant> "));
 
         let response = "";
-        await chatCompletionFn({
+        for await (const chunk of chatCompletionStreamFn({
           context: poolItem.context,
-          messages,
-          stream: true,
-          onTextChunk: (chunk) => {
-            response += chunk;
-            output.write(chunk);
-          }
-        });
+          messages
+        })) {
+          response += chunk;
+          output.write(chunk);
+        }
 
         output.write("\n");
         messages.push({ role: "assistant", content: response });
