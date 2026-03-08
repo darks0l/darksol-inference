@@ -18,6 +18,16 @@ async function disposeResource(resource) {
   }
 }
 
+function isLikelyCorruptOrIncompatibleError(error) {
+  const message = String(error?.message || "").toLowerCase();
+  return (
+    message.includes("gguf") && message.includes("invalid") ||
+    message.includes("bad magic") ||
+    message.includes("unsupported model") ||
+    message.includes("unknown model file type")
+  );
+}
+
 export class ModelPool {
   constructor({ maxLoadedModels, maxLoadedModelBytes } = {}) {
     this.loaded = new Map();
@@ -88,8 +98,23 @@ export class ModelPool {
 
     const modelPath = await resolveModelPath(options.modelPath || getModelFilePath(modelName));
     const hardware = await detectHardware();
+    const freeMemoryBytes = hardware?.memory?.free || 0;
+    if (metadata.size && freeMemoryBytes > 0 && metadata.size > freeMemoryBytes * 0.95) {
+      throw new Error(
+        `Insufficient memory: model '${modelName}' requires ${metadata.size} bytes but only ${Math.floor(freeMemoryBytes)} bytes are free.`
+      );
+    }
+
     const optimized = optimizeForModel({ hardware, modelMetadata: metadata });
-    const model = await loadModelWithConfig({ modelPath, options: optimized });
+    let model;
+    try {
+      model = await loadModelWithConfig({ modelPath, options: optimized });
+    } catch (error) {
+      if (isLikelyCorruptOrIncompatibleError(error)) {
+        throw new Error(`Failed to load model '${modelName}': GGUF file is corrupt or incompatible.`);
+      }
+      throw error;
+    }
     const context = await model.createContext();
 
     const item = {

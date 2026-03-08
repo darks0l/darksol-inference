@@ -14,6 +14,31 @@ export function isModelNotInstalledError(error) {
   return message.startsWith("Model not installed:") || message.toLowerCase().includes("not found");
 }
 
+function isNoModelsInstalledError(error) {
+  const message = String(error?.message || "").toLowerCase();
+  return message.includes("no models installed") || message.includes("model not installed:");
+}
+
+function isModelTooLargeForRamError(error) {
+  const message = String(error?.message || "").toLowerCase();
+  return (
+    message.includes("insufficient memory") ||
+    message.includes("out of memory") ||
+    message.includes("not enough memory") ||
+    message.includes("alloc") && message.includes("failed")
+  );
+}
+
+function isCorruptOrIncompatibleModelError(error) {
+  const message = String(error?.message || "").toLowerCase();
+  return (
+    message.includes("gguf") && message.includes("invalid") ||
+    message.includes("corrupt") ||
+    message.includes("unsupported model file format") ||
+    message.includes("failed to load model")
+  );
+}
+
 export function handleRouteError(reply, error, model) {
   if (error?.name === "ProviderTimeoutError") {
     return openAIError(reply, 504, error.message, "api_error", "provider_timeout");
@@ -39,6 +64,36 @@ export function handleRouteError(reply, error, model) {
       `The model '${model}' does not exist or is not installed.`,
       "invalid_request_error",
       "model_not_found"
+    );
+  }
+
+  if (isNoModelsInstalledError(error)) {
+    return openAIError(
+      reply,
+      404,
+      "No models were found. Install one with `darksol pull <model>` and try again.",
+      "invalid_request_error",
+      "model_not_found"
+    );
+  }
+
+  if (isModelTooLargeForRamError(error)) {
+    return openAIError(
+      reply,
+      400,
+      "The selected model is too large for available system memory. Try a smaller quantized model.",
+      "invalid_request_error",
+      "model_too_large"
+    );
+  }
+
+  if (isCorruptOrIncompatibleModelError(error)) {
+    return openAIError(
+      reply,
+      400,
+      "The GGUF file appears corrupt or incompatible with this runtime. Re-download the model or choose another quant.",
+      "invalid_request_error",
+      "invalid_model_file"
     );
   }
 
