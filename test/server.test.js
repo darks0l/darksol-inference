@@ -5,6 +5,16 @@ import { buildServer, startServer } from "../src/server/index.js";
 let server;
 let baseUrl;
 
+function createDeferred() {
+  let resolve;
+  let reject;
+  const promise = new Promise((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
 async function postJson(path, body) {
   const response = await fetch(`${baseUrl}${path}`, {
     method: "POST",
@@ -354,6 +364,171 @@ test("POST /v1/completions returns model_not_found for missing Ollama model", as
     assert.equal(body.error.type, "invalid_request_error");
     assert.equal(body.error.code, "model_not_found");
   });
+});
+
+test("Inference queue serializes /v1/completions and /v1/chat/completions with concurrency=1", async () => {
+  const firstStarted = createDeferred();
+  const secondStarted = createDeferred();
+  const releaseFirst = createDeferred();
+  const releaseSecond = createDeferred();
+  let sawSecondStart = false;
+
+  const ollamaFetchImpl = async (url) => {
+    const pathname = new URL(String(url)).pathname;
+
+    if (pathname === "/api/generate") {
+      firstStarted.resolve();
+      await releaseFirst.promise;
+      return {
+        ok: true,
+        async json() {
+          return { response: "first done" };
+        }
+      };
+    }
+
+    if (pathname === "/api/chat") {
+      sawSecondStart = true;
+      secondStarted.resolve();
+      await releaseSecond.promise;
+      return {
+        ok: true,
+        async json() {
+          return { message: { content: "second done" } };
+        }
+      };
+    }
+
+    throw new Error(`unexpected url: ${url}`);
+  };
+
+  await withTempServer(
+    { ollamaEnabled: true, ollamaFetchImpl, inferenceConcurrency: 1 },
+    async (tempBaseUrl) => {
+      const firstRequest = fetch(`${tempBaseUrl}/v1/completions`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          model: "ollama/llama3.2:latest",
+          prompt: "first"
+        })
+      });
+
+      await firstStarted.promise;
+
+      const secondRequest = fetch(`${tempBaseUrl}/v1/chat/completions`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          model: "ollama/llama3.2:latest",
+          messages: [{ role: "user", content: "second" }]
+        })
+      });
+
+      await Promise.resolve();
+      await Promise.resolve();
+      assert.equal(sawSecondStart, false);
+
+      releaseFirst.resolve();
+
+      const firstResponse = await firstRequest;
+      const firstBody = await firstResponse.json();
+      assert.equal(firstResponse.status, 200);
+      assert.equal(firstBody.choices?.[0]?.text, "first done");
+
+      await secondStarted.promise;
+      releaseSecond.resolve();
+
+      const secondResponse = await secondRequest;
+      const secondBody = await secondResponse.json();
+      assert.equal(secondResponse.status, 200);
+      assert.equal(secondBody.choices?.[0]?.message?.content, "second done");
+    }
+  );
+});
+
+test("POST /v1/completions retries once on transient provider errors", async () => {
+  let attempts = 0;
+
+  const ollamaFetchImpl = async (url) => {
+    if (!String(url).endsWith("/api/generate")) {
+      throw new Error(`unexpected url: ${url}`);
+    }
+
+    attempts += 1;
+    if (attempts === 1) {
+      return {
+        ok: false,
+        status: 502,
+        async json() {
+          return { error: "upstream temporarily unavailable" };
+        }
+      };
+    }
+
+    return {
+      ok: true,
+      async json() {
+        return { response: "retried completion" };
+      }
+    };
+  };
+
+  await withTempServer({ ollamaEnabled: true, ollamaFetchImpl }, async (tempBaseUrl) => {
+    const response = await fetch(`${tempBaseUrl}/v1/completions`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        model: "ollama/llama3.2:latest",
+        prompt: "retry me"
+      })
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(body.choices?.[0]?.text, "retried completion");
+    assert.equal(attempts, 2);
+  });
+});
+
+test("POST /v1/completions returns provider_timeout after timeout with single retry", async () => {
+  let attempts = 0;
+
+  const ollamaFetchImpl = async (url) => {
+    if (!String(url).endsWith("/api/generate")) {
+      throw new Error(`unexpected url: ${url}`);
+    }
+    attempts += 1;
+    return new Promise(() => {});
+  };
+
+  const immediateTimers = {
+    setTimeout(callback) {
+      callback();
+      return 1;
+    },
+    clearTimeout() {}
+  };
+
+  await withTempServer(
+    { ollamaEnabled: true, ollamaFetchImpl, providerTimeoutMs: 1000, timers: immediateTimers },
+    async (tempBaseUrl) => {
+      const response = await fetch(`${tempBaseUrl}/v1/completions`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          model: "ollama/llama3.2:latest",
+          prompt: "will timeout"
+        })
+      });
+      const body = await response.json();
+
+      assert.equal(response.status, 504);
+      assert.equal(body.error.type, "api_error");
+      assert.equal(body.error.code, "provider_timeout");
+      assert.equal(attempts, 2);
+    }
+  );
 });
 
 test("GET /v1/ollama/models returns upstream_unreachable style error when Ollama is offline", async () => {
