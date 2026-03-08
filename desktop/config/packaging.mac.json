@@ -1,0 +1,7 @@
+{
+  "platform": "darwin",
+  "target": "dmg-placeholder",
+  "artifactName": "darksol-inference-desktop-mac",
+  "bundleId": "net.darksol.inference.mac",
+  "notarizationProfile": "TBD"
+}

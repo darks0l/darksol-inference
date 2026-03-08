@@ -1,0 +1,13 @@
+{
+  "appName": "DARKSOL Inference",
+  "appId": "net.darksol.inference",
+  "channel": "foundation",
+  "window": {
+    "minWidth": 1160,
+    "minHeight": 760,
+    "defaultWidth": 1360,
+    "defaultHeight": 900
+  },
+  "shellMirrorUrl": "http://127.0.0.1:11435/web/index.html",
+  "apiBaseUrl": "http://127.0.0.1:11435"
+}

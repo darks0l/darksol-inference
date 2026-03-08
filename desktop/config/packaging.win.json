@@ -1,0 +1,7 @@
+{
+  "platform": "win32",
+  "target": "msix-placeholder",
+  "artifactName": "darksol-inference-desktop-win",
+  "bundleId": "net.darksol.inference.win",
+  "signingProfile": "TBD"
+}

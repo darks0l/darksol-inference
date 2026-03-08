@@ -1,0 +1,13 @@
+{
+  "name": "@darksol/desktop-shell",
+  "private": true,
+  "version": "0.0.0-phase8",
+  "description": "Desktop shell scaffold for DARKSOL Inference (Phase 8 kickoff)",
+  "type": "module",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "node src/main.js",
+    "package:win": "node scripts/pack-win-placeholder.mjs",
+    "package:mac": "node scripts/pack-mac-placeholder.mjs"
+  }
+}
