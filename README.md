@@ -80,6 +80,11 @@ Default base URL: `http://127.0.0.1:11435`
 - `POST /v1/completions` - OpenAI-compatible text completions.
 - `POST /v1/embeddings` - OpenAI-compatible embeddings.
 
+API contract:
+
+- OpenAPI 3.1 document: `docs/openapi.json`
+- Validate route inventory alignment by running `npm test` (`/v1/app/meta` route list is checked against the OpenAPI paths).
+
 Chat completion example:
 
 ```bash
@@ -127,8 +132,10 @@ Generated outputs:
 
 - `assets/icons/favicon-32x32.png`
 - `assets/icons/apple-touch-icon.png`
-- `assets/icons/favicon.ico` (current placeholder: PNG copy with `.ico` filename)
+- `assets/icons/favicon.ico` (true ICO container with 16/32/48 icon sizes)
 - `assets/icons/site.webmanifest`
+
+`scripts/generate-icons.mjs` uses `sharp` and `png-to-ico` to generate PNG variants plus a multi-resolution `.ico`.
 
 ## Web Shell
 
@@ -137,7 +144,20 @@ A minimal local static shell is provided for future downloadable app UX:
 - `web/index.html`
 - `web/styles.css`
 
-This is intentionally static/local-only at this phase and not yet served by Fastify.
+These files are served by Fastify at `/web/*`, and branding files are served at `/assets/*`.
+
+Static serving safety at this phase:
+
+- static assets are restricted to loopback clients only
+- path traversal is prevented by Fastify static file serving rooted in `web/` and `assets/`
+
+## CI
+
+Current CI provider: GitHub Actions.
+
+- Workflow: `.github/workflows/ci.yml`
+- Triggers: push and pull request
+- Jobs: `npm ci`, `npm test`
 
 ## Environment
 

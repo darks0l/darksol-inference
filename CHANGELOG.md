@@ -8,6 +8,15 @@
 - Hardware detection and inference optimization
 
 ## Unreleased
+- Served local static assets from Fastify at `/web/*` and `/assets/*` with loopback-only access restrictions.
+- Added integration tests for static web/icon delivery, content types, and non-loopback static access rejection.
+- Replaced placeholder favicon generation with true multi-size ICO output (16/32/48) in `scripts/generate-icons.mjs`.
+- Added `png-to-ico` and regenerated `assets/icons/favicon.ico` as a valid ICO binary container.
+- Added API-key auth integration tests for missing/invalid bearer token behavior on `/v1/*` and explicit `/health` public access.
+- Added GitHub Actions CI workflow running `npm ci` and `npm test` on push and pull requests.
+- Added OpenAPI contract at `docs/openapi.json` for current endpoints.
+- Added integration test that verifies `/v1/app/meta` route inventory aligns with OpenAPI paths.
+- Updated README and Phase 3 audit documentation for static serving, API contract usage, CI, and remaining risks.
 - Added `GET /v1/directory/models` with HuggingFace-backed search (`q`, `limit`, `task`) and normalized item schema.
 - Added robust directory upstream error handling with OpenAI-style error envelopes.
 - Added `darksol search <query> [--limit <n>] [--task <tag>]` CLI command for concise model search output.

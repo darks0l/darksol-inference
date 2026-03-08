@@ -86,29 +86,21 @@ Repository span reviewed: `e10f44e` (init) through current `HEAD`.
     - `npm run generate:icons`
 - `package-lock.json` is present and current.
 
-## Missing Pieces / Risks
+## Missing Pieces / Risks (Updated After Phase 4)
 
-- Static files are not served by the API server yet. `/v1/app/meta` exposes paths, but `/web/*` and `/assets/*` are local file references only.
-- `favicon.ico` is currently a placeholder PNG copy with `.ico` extension, not a true multi-resolution ICO.
-- No CI workflow currently enforces `npm test` on push/merge.
-- No explicit API schema/OpenAPI document for route contracts.
-- Route list in `/v1/app/meta` is static; risk of drift if new routes are added without updating this list.
-- CLI tests focus on registration/search; other command behaviors (serve/run/pull/rm/status/info) remain lightly tested.
-- Security/auth behavior is only lightly tested (no API-key-required integration cases).
+- Static files are now served by Fastify at `/web/*` and `/assets/*`, including loopback-only access controls and integration tests.
+- `favicon.ico` is now generated as a true multi-resolution ICO (16/32/48) via `scripts/generate-icons.mjs`.
+- CI now runs `npm ci` and `npm test` on push and pull requests via GitHub Actions.
+- API contract now exists at `docs/openapi.json`, with integration tests verifying alignment against `/v1/app/meta` route inventory.
+- API-key auth integration tests now cover missing/invalid bearer token cases and explicit `/health` public behavior.
+- Remaining risk: `/v1/app/meta` route inventory is still manually maintained in code and can drift if routes are added without updating that list and OpenAPI together.
+- Remaining risk: CLI tests still focus on registration/search; broader command integration depth is still limited.
 
 ## Recommended Next Milestones
 
-1. Serve local static assets from Fastify:
-   - expose `/web/*` and `/assets/*` directly for local dashboard use
-   - add route tests to verify static delivery and MIME types
-2. Replace placeholder `.ico` with true multi-size ICO output:
-   - add deterministic ICO generation (16/32/48/64) in icon script
-   - add script-level validation step
-3. Expand test depth:
-   - add API-key auth tests (missing/invalid token cases)
-   - add CLI integration tests for serve/run/pull/rm/status/info paths
-4. Introduce CI baseline:
-   - GitHub/GitLab pipeline for `npm ci`, `npm test`, and lint checks
-5. Add API contract docs:
-   - OpenAPI spec or route reference with request/response examples
-   - keep `/v1/app/meta` and docs generated from one source of truth
+1. Reduce route contract drift:
+   - generate `/v1/app/meta` route inventory from registered routes and generate OpenAPI from one source of truth
+2. Expand CLI integration tests:
+   - add command-level tests for serve/run/pull/rm/status/info flows
+3. Add lint/typecheck gates in CI:
+   - include static analysis alongside `npm test`
