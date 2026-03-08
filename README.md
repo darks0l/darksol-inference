@@ -135,14 +135,13 @@ Config: `~/.darksol/mcp-servers.json`
 
 Runtime config: `~/.darksol/config.json`
 
-## Desktop App
+## Desktop + Web Notes
 
-Darksol Studio desktop app is coming soon with a full GUI for model management, chat, MCP settings, and cloud gateway access.
+For architecture details (desktop shell + web portal implementation), see:
 
-- **Windows** — installer (.exe)
-- **macOS** — universal .dmg (Intel + Apple Silicon)
+- `docs/PHASE8_DESKTOP_WEB_ARCHITECTURE.md`
 
-Visit [darksol.cc](https://darksol.cc) for downloads when available.
+The npm README stays focused on install + usage.
 
 ## License
 

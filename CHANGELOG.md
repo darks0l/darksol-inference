@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.2.1
+- npm docs cleanup: removed npm-facing README clutter around portal/web implementation details and kept README focused on install + usage.
+- Added `docs/WEB.md` to house web/desktop implementation notes outside of npm package docs.
+
 ## 0.2.0
 - Added MCP integration foundation: file-backed MCP server registry (`~/.darksol/mcp-servers.json`) with preconfigured CoinGecko/DexScreener/Etherscan/DefiLlama entries, OpenAI tool-schema injection, and MCP tool-call execution loop for chat completions.
 - Added MCP management surfaces: CLI `darksol mcp list|enable|disable` and API routes `GET /v1/mcp/servers`, `POST /v1/mcp/servers/:name/enable`, and `POST /v1/mcp/servers/:name/disable`.
