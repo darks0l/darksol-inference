@@ -24,16 +24,6 @@
     "/web/{filePath}": {
       "get": {
         "summary": "Serve local web shell files (loopback only)",
-        "parameters": [
-          {
-            "name": "filePath",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Static web file"
@@ -44,12 +34,7 @@
           "404": {
             "description": "File not found"
           }
-        }
-      }
-    },
-    "/assets/{filePath}": {
-      "get": {
-        "summary": "Serve local asset files (loopback only)",
+        },
         "parameters": [
           {
             "name": "filePath",
@@ -59,7 +44,12 @@
               "type": "string"
             }
           }
-        ],
+        ]
+      }
+    },
+    "/assets/{filePath}": {
+      "get": {
+        "summary": "Serve local asset files (loopback only)",
         "responses": {
           "200": {
             "description": "Static asset file"
@@ -70,17 +60,22 @@
           "404": {
             "description": "File not found"
           }
-        }
+        },
+        "parameters": [
+          {
+            "name": "filePath",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
       }
     },
     "/v1/models": {
       "get": {
         "summary": "List installed models in OpenAI list format",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
         "responses": {
           "200": {
             "description": "Model list"
@@ -88,12 +83,31 @@
           "401": {
             "description": "Missing or invalid API key"
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/v1/directory/models": {
       "get": {
         "summary": "Search HuggingFace model directory",
+        "responses": {
+          "200": {
+            "description": "Directory search result"
+          },
+          "400": {
+            "description": "Invalid query parameters"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          },
+          "502": {
+            "description": "Upstream directory unavailable"
+          }
+        },
         "security": [
           {
             "bearerAuth": []
@@ -126,31 +140,12 @@
               "type": "string"
             }
           }
-        ],
-        "responses": {
-          "200": {
-            "description": "Directory search result"
-          },
-          "400": {
-            "description": "Invalid query parameters"
-          },
-          "401": {
-            "description": "Missing or invalid API key"
-          },
-          "502": {
-            "description": "Upstream directory unavailable"
-          }
-        }
+        ]
       }
     },
     "/v1/bankr/health": {
       "get": {
         "summary": "Bankr gateway config status",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
         "responses": {
           "200": {
             "description": "Bankr gateway health payload"
@@ -158,17 +153,17 @@
           "401": {
             "description": "Missing or invalid API key"
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/v1/app/meta": {
       "get": {
         "summary": "App bootstrap metadata and route inventory",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
         "responses": {
           "200": {
             "description": "Metadata payload"
@@ -176,17 +171,17 @@
           "401": {
             "description": "Missing or invalid API key"
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/v1/chat/completions": {
       "post": {
         "summary": "OpenAI-compatible chat completions",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
         "responses": {
           "200": {
             "description": "Chat completion result"
@@ -203,17 +198,17 @@
           "500": {
             "description": "Internal server error"
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/v1/completions": {
       "post": {
         "summary": "OpenAI-compatible text completions",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
         "responses": {
           "200": {
             "description": "Text completion result"
@@ -230,17 +225,17 @@
           "500": {
             "description": "Internal server error"
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/v1/embeddings": {
       "post": {
         "summary": "OpenAI-compatible embeddings",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
         "responses": {
           "200": {
             "description": "Embedding result"
@@ -257,7 +252,12 @@
           "500": {
             "description": "Internal server error"
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     }
   },
