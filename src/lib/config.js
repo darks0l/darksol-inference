@@ -7,6 +7,9 @@ const defaultConfig = {
   port: 11435,
   defaultModel: null,
   keepAliveMs: 300000,
+  inferenceConcurrency: 1,
+  providerTimeoutMs: 15000,
+  providerRetryCount: 1,
   ollamaEnabled: true,
   ollamaBaseUrl: "http://127.0.0.1:11434"
 };

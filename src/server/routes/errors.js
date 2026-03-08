@@ -15,6 +15,10 @@ export function isModelNotInstalledError(error) {
 }
 
 export function handleRouteError(reply, error, model) {
+  if (error?.name === "ProviderTimeoutError") {
+    return openAIError(reply, 504, error.message, "api_error", "provider_timeout");
+  }
+
   if (error?.name === "OllamaError") {
     const isModelError = error.code === "model_not_found";
     return openAIError(
