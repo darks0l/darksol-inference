@@ -1,5 +1,9 @@
 # Assets Notes
 
+- `assets/darksol-banner.png`
+  - Source: DARKSOL standard banner from `gpu-orchestrator/assets/darksol-banner.png`.
+  - Usage: README/npm page header treatment image.
+
 - `assets/footer-logo-darksol.png`
   - Source: Meta-provided logo asset (Discord upload)
   - Usage: **Footer logo + favicon/web icon source asset** for DARKSOL Inference application and future web surfaces.

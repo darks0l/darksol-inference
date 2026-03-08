@@ -1,3 +1,14 @@
+<p align="center">
+  <img src="https://gitlab.com/darks0l/darksol-inference/-/raw/master/assets/darksol-banner.png" alt="DARKSOL" width="600" />
+</p>
+<h3 align="center">Built by DARKSOL 🌑</h3>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/darksol"><img src="https://img.shields.io/npm/v/darksol?style=flat-square" alt="npm version" /></a>
+  <a href="https://www.npmjs.com/package/darksol"><img src="https://img.shields.io/npm/l/darksol?style=flat-square" alt="license" /></a>
+  <img src="https://img.shields.io/badge/node-%3E%3D20-3C873A?style=flat-square" alt="node >=20" />
+</p>
+
 # DARKSOL Inference
 
 `darksol` is a local LLM inference engine with a CLI and an OpenAI-compatible API server.
@@ -231,6 +242,7 @@ src/
 scripts/
   generate-icons.mjs      # icon + webmanifest generation from source logo
 assets/
+  darksol-banner.png      # DARKSOL treatment banner
   footer-logo-darksol.png # source branding asset
   icons/                  # generated favicon/web icon pack
 web/
@@ -243,3 +255,5 @@ test/
   cli.test.js             # deterministic command-level CLI tests (serve/run/pull/list/rm/ps/info/browse/status/search + provider error paths)
   server.test.js          # API integration tests
 ```
+
+Built with teeth. 🌑

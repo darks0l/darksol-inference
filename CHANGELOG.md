@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.2
+- README aligned to DARKSOL package treatment used across other repos/pages (banner, badges, footer voice).
+- Added `assets/darksol-banner.png` for consistent brand presentation.
+- npm page/docs refresh only; runtime behavior unchanged.
+
 ## 0.1.0
 - Phase 1 MVP scaffold
 - CLI commands for serve/run/pull/list/rm/ps/info/browse/status
