@@ -7,6 +7,15 @@
   "bin": {
     "darksol": "bin/darksol.js"
   },
+  "files": [
+    "bin/",
+    "src/",
+    "web/",
+    "assets/icons/",
+    "package.json",
+    "README.md",
+    "CHANGELOG.md"
+  ],
   "scripts": {
     "test": "node --test",
     "lint": "eslint .",
