@@ -5,7 +5,14 @@ import { ensureModelInstalled } from "../models/manager.js";
 import { modelPool } from "../engine/pool.js";
 import { saveConfig } from "../lib/config.js";
 
-export function registerServeCommand(program) {
+export function registerServeCommand(program, deps = {}) {
+  const detectHardwareFn = deps.detectHardware || detectHardware;
+  const ensureModelInstalledFn = deps.ensureModelInstalled || ensureModelInstalled;
+  const modelPoolApi = deps.modelPool || modelPool;
+  const saveConfigFn = deps.saveConfig || saveConfig;
+  const startServerFn = deps.startServer || startServer;
+  const log = deps.log || console.log;
+
   program
     .command("serve")
     .description("Start the inference API server")
@@ -18,17 +25,17 @@ export function registerServeCommand(program) {
       const host = options.host;
       const apiKey = options.apiKey;
 
-      const hardware = await detectHardware();
-      console.log(chalk.cyan(`Hardware: ${hardware.cpu.brand} | GPUs: ${hardware.gpus.length} | VRAM: ${hardware.totalVramMb}MB`));
+      const hardware = await detectHardwareFn();
+      log(chalk.cyan(`Hardware: ${hardware.cpu.brand} | GPUs: ${hardware.gpus.length} | VRAM: ${hardware.totalVramMb}MB`));
 
       if (options.model) {
-        const install = await ensureModelInstalled(options.model);
-        await modelPool.load(install.metadata.name);
-        console.log(chalk.green(`Preloaded model ${install.metadata.name}`));
+        const install = await ensureModelInstalledFn(options.model);
+        await modelPoolApi.load(install.metadata.name);
+        log(chalk.green(`Preloaded model ${install.metadata.name}`));
       }
 
-      await saveConfig({ host, port, apiKey: apiKey || null });
-      await startServer({ host, port, apiKey });
-      console.log(chalk.green(`darksol server listening on http://${host}:${port}`));
+      await saveConfigFn({ host, port, apiKey: apiKey || null });
+      await startServerFn({ host, port, apiKey });
+      log(chalk.green(`darksol server listening on http://${host}:${port}`));
     });
 }

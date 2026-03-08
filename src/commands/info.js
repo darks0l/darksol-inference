@@ -3,34 +3,43 @@ import { getInstalledModel } from "../models/manager.js";
 import { modelPool } from "../engine/pool.js";
 import { formatBytes } from "./utils.js";
 
-export function registerInfoCommand(program) {
+export function registerInfoCommand(program, deps = {}) {
+  const resolveModelSpecFn = deps.resolveModelSpec || resolveModelSpec;
+  const getInstalledModelFn = deps.getInstalledModel || getInstalledModel;
+  const modelPoolApi = deps.modelPool || modelPool;
+  const log = deps.log || console.log;
+  const errorLog = deps.errorLog || console.error;
+  const setExitCode = deps.setExitCode || ((value) => {
+    process.exitCode = value;
+  });
+
   program
     .command("info")
     .description("Show model metadata")
     .argument("<model>", "model alias or local name")
     .action(async (model) => {
-      const spec = resolveModelSpec(model);
-      const metadata = await getInstalledModel(spec.localName) || await getInstalledModel(model);
+      const spec = resolveModelSpecFn(model);
+      const metadata = await getInstalledModelFn(spec.localName) || await getInstalledModelFn(model);
 
       if (!metadata) {
-        console.error(`Model not installed: ${model}`);
-        process.exitCode = 1;
+        errorLog(`Model not installed: ${model}`);
+        setExitCode(1);
         return;
       }
 
-      const loaded = modelPool.get(metadata.name);
+      const loaded = modelPoolApi.get(metadata.name);
 
-      console.log(`Name: ${metadata.name}`);
-      console.log(`Repo: ${metadata.repo}`);
-      console.log(`File: ${metadata.file}`);
-      console.log(`Size: ${formatBytes(metadata.size)}`);
-      console.log(`Quant: ${metadata.quant || "unknown"}`);
-      console.log(`Downloaded: ${metadata.downloadedAt}`);
-      console.log(`Loaded: ${loaded ? "yes" : "no"}`);
+      log(`Name: ${metadata.name}`);
+      log(`Repo: ${metadata.repo}`);
+      log(`File: ${metadata.file}`);
+      log(`Size: ${formatBytes(metadata.size)}`);
+      log(`Quant: ${metadata.quant || "unknown"}`);
+      log(`Downloaded: ${metadata.downloadedAt}`);
+      log(`Loaded: ${loaded ? "yes" : "no"}`);
       if (loaded) {
-        console.log(`GPU Layers: ${loaded.optimized.gpuLayers}`);
-        console.log(`Threads: ${loaded.optimized.threads}`);
-        console.log(`Context: ${loaded.optimized.contextSize}`);
+        log(`GPU Layers: ${loaded.optimized.gpuLayers}`);
+        log(`Threads: ${loaded.optimized.threads}`);
+        log(`Context: ${loaded.optimized.contextSize}`);
       }
     });
 }

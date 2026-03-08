@@ -10,22 +10,22 @@ import { registerBrowseCommand } from "./commands/browse.js";
 import { registerStatusCommand } from "./commands/status.js";
 import { registerSearchCommand } from "./commands/search.js";
 
-export function createCli() {
+export function createCli(deps = {}) {
   const program = new Command();
   program
     .name("darksol")
     .description("DARKSOL local inference engine")
     .version("0.1.0");
 
-  registerServeCommand(program);
+  registerServeCommand(program, deps.serve);
   registerRunCommand(program);
   registerPullCommand(program);
-  registerListCommand(program);
+  registerListCommand(program, deps.list);
   registerRmCommand(program);
   registerPsCommand(program);
-  registerInfoCommand(program);
+  registerInfoCommand(program, deps.info);
   registerBrowseCommand(program);
-  registerStatusCommand(program);
+  registerStatusCommand(program, deps.status);
   registerSearchCommand(program);
 
   return program;

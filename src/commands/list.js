@@ -3,15 +3,20 @@ import { listInstalledModels } from "../models/manager.js";
 import { modelPool } from "../engine/pool.js";
 import { formatBytes } from "./utils.js";
 
-export function registerListCommand(program) {
+export function registerListCommand(program, deps = {}) {
+  const listInstalledModelsFn = deps.listInstalledModels || listInstalledModels;
+  const modelPoolApi = deps.modelPool || modelPool;
+  const createTable = deps.createTable || ((options) => new Table(options));
+  const log = deps.log || console.log;
+
   program
     .command("list")
     .description("List installed models")
     .action(async () => {
-      const installed = await listInstalledModels();
-      const loaded = new Set(modelPool.listLoaded().map((item) => item.name));
+      const installed = await listInstalledModelsFn();
+      const loaded = new Set(modelPoolApi.listLoaded().map((item) => item.name));
 
-      const table = new Table({
+      const table = createTable({
         head: ["Name", "Size", "Quant", "Loaded", "Source"]
       });
 
@@ -26,10 +31,10 @@ export function registerListCommand(program) {
       }
 
       if (installed.length === 0) {
-        console.log("No models installed.");
+        log("No models installed.");
         return;
       }
 
-      console.log(table.toString());
+      log(table.toString());
     });
 }
