@@ -43,6 +43,12 @@ List installed local models:
 node bin/darksol.js list
 ```
 
+List installed models including Ollama local inventory (when enabled):
+
+```bash
+node bin/darksol.js list
+```
+
 Pull a model:
 
 ```bash
@@ -53,6 +59,12 @@ Run a one-shot prompt:
 
 ```bash
 node bin/darksol.js run llama-3.2-3b "Write a haiku about local inference."
+```
+
+Run against an Ollama-downloaded model explicitly:
+
+```bash
+node bin/darksol.js run ollama/llama3.2:latest
 ```
 
 List loaded model processes:
@@ -73,6 +85,7 @@ Default base URL: `http://127.0.0.1:11435`
 
 - `GET /health` - service liveness and metadata.
 - `GET /v1/models` - list installed models in OpenAI list format.
+- `GET /v1/ollama/models` - list Ollama local models in OpenAI list format.
 - `GET /v1/directory/models` - search HuggingFace model directory with `q`, `limit`, and `task`.
 - `GET /v1/bankr/health` - Bankr gateway scaffold status (`configured`/`sandbox`) without secrets.
 - `GET /v1/app/meta` - app shell bootstrap metadata (name/version/routes + branding asset paths).
@@ -104,6 +117,23 @@ Model list example:
 
 ```bash
 curl http://127.0.0.1:11435/v1/models
+```
+
+Ollama model list example:
+
+```bash
+curl http://127.0.0.1:11435/v1/ollama/models
+```
+
+Completion using an Ollama model id:
+
+```bash
+curl -X POST http://127.0.0.1:11435/v1/completions \
+  -H "content-type: application/json" \
+  -d '{
+    "model": "ollama/llama3.2:latest",
+    "prompt": "Summarize local-first inference in one sentence."
+  }'
 ```
 
 Directory search example:
@@ -176,6 +206,14 @@ Route inventory and OpenAPI sync:
 - `BANKR_BASE_URL` (optional): Bankr gateway base URL.
 - `BANKR_API_KEY` (optional): Bankr API key.
 - `BANKR_SANDBOX` (optional, default `true`): mark Bankr client as sandbox mode.
+- `DARKSOL_OLLAMA_ENABLED` (optional, default `true`): enable/disable Ollama interoperability.
+- `DARKSOL_OLLAMA_BASE_URL` (optional, default `http://127.0.0.1:11434`): Ollama HTTP endpoint.
+
+Remote Ollama host example:
+
+```bash
+DARKSOL_OLLAMA_BASE_URL=http://10.0.0.25:11434 node bin/darksol.js serve
+```
 
 ## Project Structure
 

@@ -75,13 +75,37 @@
     },
     "/v1/models": {
       "get": {
-        "summary": "List installed models in OpenAI list format",
+        "summary": "List installed models in OpenAI list format (DARKSOL + Ollama when enabled)",
         "responses": {
           "200": {
             "description": "Model list"
           },
           "401": {
             "description": "Missing or invalid API key"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/ollama/models": {
+      "get": {
+        "summary": "List Ollama local models",
+        "responses": {
+          "200": {
+            "description": "Model list"
+          },
+          "400": {
+            "description": "Ollama provider disabled"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          },
+          "502": {
+            "description": "Ollama unavailable"
           }
         },
         "security": [

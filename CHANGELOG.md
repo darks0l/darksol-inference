@@ -8,6 +8,11 @@
 - Hardware detection and inference optimization
 
 ## Unreleased
+- Phase 6: added Ollama provider client with configurable base URL (`DARKSOL_OLLAMA_BASE_URL` / config `ollamaBaseUrl`) and enable flag (`DARKSOL_OLLAMA_ENABLED` / config `ollamaEnabled`).
+- Phase 6: added Ollama model discovery route `GET /v1/ollama/models` and integrated Ollama inventory into `GET /v1/models` when enabled.
+- Phase 6: added OpenAI-compatible chat/completion routing for explicit `ollama/<model>` ids and OpenAI-style API error envelopes for Ollama connectivity/model failures.
+- Phase 6: updated `darksol list` and `darksol run` to support Ollama local models with explicit provider tagging.
+- Phase 6: added deterministic integration tests for Ollama model listing, prompt execution, and failure scenarios (offline/model missing).
 - Phase 5: replaced hardcoded `/v1/app/meta` route inventory with shared contract source (`src/server/contract/routes.js`).
 - Phase 5: added generated OpenAPI source module (`src/server/contract/openapi.js`) and `npm run generate:openapi` to write `docs/openapi.json`.
 - Phase 5: extended contract tests to assert `/v1/app/meta`, generated contract, and `docs/openapi.json` all stay synchronized.
