@@ -1,75 +1,77 @@
-# DARKSOL
+# DARKSOL Inference
 
-Local LLM inference engine with a CLI and OpenAI-compatible API server.
+`darksol` is a local LLM inference engine with a CLI and an OpenAI-compatible API server.
 
 ## Install
+
+From source:
 
 ```bash
 npm install
 ```
 
-Run from source:
+Run CLI directly:
 
 ```bash
 node bin/darksol.js --help
 ```
 
-Optional global install:
+Optional global install from this repository:
 
 ```bash
 npm install -g .
 darksol --help
 ```
 
-## CLI Commands
+## CLI
 
-General help:
+Show global help:
 
 ```bash
 node bin/darksol.js --help
 ```
 
-Serve API:
+Start the API server:
 
 ```bash
 node bin/darksol.js serve --host 127.0.0.1 --port 11435
 ```
 
-List local models:
+List installed local models:
 
 ```bash
 node bin/darksol.js list
 ```
 
-Pull model:
+Pull a model:
 
 ```bash
 node bin/darksol.js pull llama-3.2-3b
 ```
 
-Run a prompt:
+Run a one-shot prompt:
 
 ```bash
 node bin/darksol.js run llama-3.2-3b "Write a haiku about local inference."
 ```
 
-Show loaded model processes:
+List loaded model processes:
 
 ```bash
 node bin/darksol.js ps
 ```
 
-## API Endpoints
+## API
 
-Base URL: `http://127.0.0.1:11435`
+Default base URL: `http://127.0.0.1:11435`
 
-- `GET /health`: server liveness and metadata.
-- `GET /v1/models`: list installed models in OpenAI model-list format.
-- `POST /v1/chat/completions`: OpenAI-compatible chat completions.
-- `POST /v1/completions`: OpenAI-compatible text completions.
-- `POST /v1/embeddings`: OpenAI-compatible embeddings.
+- `GET /health` - service liveness and metadata.
+- `GET /v1/models` - list installed models in OpenAI list format.
+- `POST /v1/chat/completions` - OpenAI-compatible chat completions.
+- `POST /v1/completions` - OpenAI-compatible text completions.
+- `POST /v1/embeddings` - OpenAI-compatible embeddings.
 
-Example chat completion:
+Chat completion example:
 
 ```bash
 curl -X POST http://127.0.0.1:11435/v1/chat/completions \
@@ -82,7 +84,7 @@ curl -X POST http://127.0.0.1:11435/v1/chat/completions \
   }'
 ```
 
-Example models list:
+Model list example:
 
 ```bash
 curl http://127.0.0.1:11435/v1/models
@@ -96,7 +98,7 @@ bin/
 src/
   cli.js                  # command registration
   commands/               # CLI command handlers
-  engine/                 # inference, embedding, model loading
+  engine/                 # inference, embeddings, model loading
   hardware/               # device detection and optimization
   lib/                    # config, paths, logging
   models/                 # model registry, pull, aliases
