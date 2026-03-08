@@ -1,6 +1,12 @@
 # Changelog
 
 ## Unreleased
+- Workstream 2: added local-only Ollama model discovery in `src/providers/ollama-local.js` by scanning manifests/blobs under `~/.ollama/models` (`%USERPROFILE%\\.ollama\\models` on Windows).
+- Workstream 2: updated `darksol list` to show locally installed Ollama models without requiring the Ollama daemon.
+- Workstream 2: updated `darksol run ollama/<model>` to resolve and load GGUF files directly from local Ollama storage via native inference path.
+- Workstream 2: added deterministic filesystem-mocked tests for local Ollama discovery and GGUF resolution (`test/ollama-local.test.js`).
+- Workstream 1: wired real local GGUF loading/inference via `node-llama-cpp` in `src/engine/{loader,inference,pool}.js` with configurable models directory override (`DARKSOL_MODELS_DIR`), pool load/unload lifecycle management, and LRU-style memory guardrails (`DARKSOL_MAX_LOADED_MODELS`, `DARKSOL_MAX_LOADED_MODEL_BYTES`).
+- Added smoke coverage for graceful startup failure when a registry model exists but its GGUF file is missing (`test/inference-smoke.test.js`).
 - Phase 8 kickoff: added desktop/web architecture spec at `docs/PHASE8_DESKTOP_WEB_ARCHITECTURE.md` with product boundary, shared components, branding references, and feature matrix.
 - Phase 8 kickoff: added non-breaking `desktop/` scaffold with entrypoint placeholders (`src/main.js`, `src/preload.js`) and Windows/macOS packaging path configs.
 - Phase 8 kickoff: upgraded web shell to desktop-mirror three-panel layout (`left nav`, `center chat/work area`, `right diagnostics`) using DARKSOL branding assets.
