@@ -50,6 +50,10 @@
 
 ## Immediate Next Tasks
 
-- Expand deterministic CLI integration tests for `pull`, `rm`, `ps`, `browse`
-- Tighten error assertion matrix across providers (especially mixed-provider run edge cases)
-- Begin Bankr LLM gateway provider adapter behind env flag
+Completed in this chunk (Bankr scope: LLM Gateway integration only, no onchain tx features):
+
+- Added deterministic CLI integration tests for `pull`, `rm`, `ps`, and `browse` command flows using mocked IO (no network reliance)
+- Tightened provider error-path assertions for `run`, `list`, and `status` (invalid model/provider and offline states)
+- Updated README and roadmap notes to reflect the exact chunk scope and outputs
+
+Remaining Phase 7 work continues from the plan sections above.

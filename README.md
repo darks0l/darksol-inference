@@ -240,6 +240,6 @@ docs/
   API_CONTRACT_SYNC.md    # route inventory + OpenAPI source-of-truth workflow
   PHASE3_AUDIT.md         # commit-span audit + risks + next milestones
 test/
-  cli.test.js             # command-level CLI tests (registration + serve/status/list/info/search)
+  cli.test.js             # deterministic command-level CLI tests (serve/run/pull/list/rm/ps/info/browse/status/search + provider error paths)
   server.test.js          # API integration tests
 ```
