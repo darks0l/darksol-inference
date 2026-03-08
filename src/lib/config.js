@@ -6,7 +6,9 @@ const defaultConfig = {
   host: "127.0.0.1",
   port: 11435,
   defaultModel: null,
-  keepAliveMs: 300000
+  keepAliveMs: 300000,
+  ollamaEnabled: true,
+  ollamaBaseUrl: "http://127.0.0.1:11434"
 };
 
 export async function loadConfig() {
@@ -21,7 +23,8 @@ export async function loadConfig() {
 
 export async function saveConfig(nextConfig) {
   await ensureDarksolDirs();
-  const merged = { ...defaultConfig, ...nextConfig };
+  const current = await loadConfig();
+  const merged = { ...defaultConfig, ...current, ...nextConfig };
   await fs.writeFile(configPath, `${JSON.stringify(merged, null, 2)}\n`, "utf8");
   return merged;
 }

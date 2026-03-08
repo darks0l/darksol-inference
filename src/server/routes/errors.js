@@ -10,6 +10,19 @@ export function openAIError(reply, status, message, type, code) {
 }
 
 export function handleRouteError(reply, error, model) {
+  if (error?.name === "OllamaError") {
+    const isModelError = error.code === "model_not_found";
+    return openAIError(
+      reply,
+      error.status || (isModelError ? 404 : 502),
+      isModelError
+        ? `The model '${model}' does not exist in Ollama local inventory.`
+        : error.message || "Failed to reach Ollama.",
+      isModelError ? "invalid_request_error" : "api_error",
+      error.code || (isModelError ? "model_not_found" : "ollama_error")
+    );
+  }
+
   const message = String(error?.message || "");
 
   if (message.startsWith("Model not installed:")) {

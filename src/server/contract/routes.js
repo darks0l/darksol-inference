@@ -50,10 +50,22 @@ export const ROUTE_CONTRACT = [
   {
     method: "GET",
     path: "/v1/models",
-    summary: "List installed models in OpenAI list format",
+    summary: "List installed models in OpenAI list format (DARKSOL + Ollama when enabled)",
     auth: "bearer",
     responses: {
       200: "Model list",
+      401: "Missing or invalid API key"
+    }
+  },
+  {
+    method: "GET",
+    path: "/v1/ollama/models",
+    summary: "List Ollama local models",
+    auth: "bearer",
+    responses: {
+      200: "Model list",
+      400: "Ollama provider disabled",
+      502: "Ollama unavailable",
       401: "Missing or invalid API key"
     }
   },

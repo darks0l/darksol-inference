@@ -12,6 +12,8 @@ import { registerDirectoryRoutes } from "./routes/directory.js";
 import { registerBankrRoutes } from "./routes/bankr.js";
 import { registerAppRoutes } from "./routes/app.js";
 import { logger } from "../lib/logger.js";
+import { loadConfig } from "../lib/config.js";
+import { createOllamaClient } from "../providers/ollama.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -26,7 +28,16 @@ function isLoopbackAddress(address = "") {
   );
 }
 
-export async function buildServer({ apiKey, fetchImpl } = {}) {
+export async function buildServer({ apiKey, fetchImpl, ollamaFetchImpl, ollamaEnabled, ollamaBaseUrl } = {}) {
+  const runtimeConfig = await loadConfig();
+  const resolvedOllamaEnabled = ollamaEnabled ?? runtimeConfig.ollamaEnabled;
+  const resolvedOllamaBaseUrl = ollamaBaseUrl ?? runtimeConfig.ollamaBaseUrl;
+  const ollamaClient = createOllamaClient({
+    enabled: resolvedOllamaEnabled,
+    baseUrl: resolvedOllamaBaseUrl,
+    fetchImpl: ollamaFetchImpl || fetchImpl
+  });
+
   const fastify = Fastify({ logger: false });
   const authMiddleware = createAuthMiddleware({ apiKey });
 
@@ -57,19 +68,33 @@ export async function buildServer({ apiKey, fetchImpl } = {}) {
   });
 
   await registerHealthRoutes(fastify);
-  await registerModelsRoutes(fastify);
+  await registerModelsRoutes(fastify, { ollamaClient });
   await registerDirectoryRoutes(fastify, { fetchImpl });
   await registerBankrRoutes(fastify);
   await registerAppRoutes(fastify);
-  await registerChatRoutes(fastify);
-  await registerCompletionsRoutes(fastify);
+  await registerChatRoutes(fastify, { ollamaClient });
+  await registerCompletionsRoutes(fastify, { ollamaClient });
   await registerEmbeddingsRoutes(fastify);
 
   return fastify;
 }
 
-export async function startServer({ host = "127.0.0.1", port = 11435, apiKey, fetchImpl } = {}) {
-  const server = await buildServer({ apiKey, fetchImpl });
+export async function startServer({
+  host = "127.0.0.1",
+  port = 11435,
+  apiKey,
+  fetchImpl,
+  ollamaFetchImpl,
+  ollamaEnabled,
+  ollamaBaseUrl
+} = {}) {
+  const server = await buildServer({
+    apiKey,
+    fetchImpl,
+    ollamaFetchImpl,
+    ollamaEnabled,
+    ollamaBaseUrl
+  });
   await server.listen({ host, port });
   await logger.info("server_started", { host, port });
   return server;
