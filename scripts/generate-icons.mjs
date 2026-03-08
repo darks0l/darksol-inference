@@ -1,6 +1,7 @@
-import { cp, mkdir, writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import pngToIco from "png-to-ico";
 import sharp from "sharp";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -21,8 +22,16 @@ async function main() {
   await sharp(sourcePng).resize(32, 32, { fit: "cover" }).png().toFile(favicon32Path);
   await sharp(sourcePng).resize(180, 180, { fit: "cover" }).png().toFile(appleTouchIconPath);
 
-  // Placeholder ICO if proper multi-size ICO generation is not available.
-  await cp(favicon32Path, faviconIcoPath, { force: true });
+  const favicon16Buffer = await sharp(sourcePng).resize(16, 16, { fit: "cover" }).png().toBuffer();
+  const favicon32Buffer = await sharp(sourcePng).resize(32, 32, { fit: "cover" }).png().toBuffer();
+  const favicon48Buffer = await sharp(sourcePng).resize(48, 48, { fit: "cover" }).png().toBuffer();
+
+  const faviconIcoBuffer = await pngToIco([favicon16Buffer, favicon32Buffer, favicon48Buffer]);
+  if (faviconIcoBuffer[0] !== 0x00 || faviconIcoBuffer[1] !== 0x00 || faviconIcoBuffer[2] !== 0x01 || faviconIcoBuffer[3] !== 0x00) {
+    throw new Error("Generated favicon.ico does not have a valid ICO header.");
+  }
+
+  await writeFile(faviconIcoPath, faviconIcoBuffer);
 
   const manifest = {
     name: "DARKSOL Inference",
@@ -55,7 +64,7 @@ async function main() {
   console.log("Generated icons in assets/icons:");
   console.log("- favicon-32x32.png");
   console.log("- apple-touch-icon.png");
-  console.log("- favicon.ico (placeholder copy of favicon-32x32.png)");
+  console.log("- favicon.ico (true multi-size ICO: 16/32/48)");
   console.log("- site.webmanifest");
 }
 
