@@ -8,6 +8,12 @@
 - Hardware detection and inference optimization
 
 ## Unreleased
+- Phase 5: replaced hardcoded `/v1/app/meta` route inventory with shared contract source (`src/server/contract/routes.js`).
+- Phase 5: added generated OpenAPI source module (`src/server/contract/openapi.js`) and `npm run generate:openapi` to write `docs/openapi.json`.
+- Phase 5: extended contract tests to assert `/v1/app/meta`, generated contract, and `docs/openapi.json` all stay synchronized.
+- Phase 5: expanded CLI command-level tests with deterministic stubs for `serve`, `status`, `list`, and `info`.
+- Phase 5: added lint/typecheck gates (`npm run lint`, `npm run typecheck`) and CI workflow now runs `npm ci`, lint, typecheck, and test.
+- Added `docs/API_CONTRACT_SYNC.md` and README contributor notes for route inventory/OpenAPI synchronization workflow.
 - Served local static assets from Fastify at `/web/*` and `/assets/*` with loopback-only access restrictions.
 - Added integration tests for static web/icon delivery, content types, and non-loopback static access rejection.
 - Replaced placeholder favicon generation with true multi-size ICO output (16/32/48) in `scripts/generate-icons.mjs`.

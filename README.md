@@ -83,7 +83,9 @@ Default base URL: `http://127.0.0.1:11435`
 API contract:
 
 - OpenAPI 3.1 document: `docs/openapi.json`
-- Validate route inventory alignment by running `npm test` (`/v1/app/meta` route list is checked against the OpenAPI paths).
+- Contract source of truth: `src/server/contract/routes.js` and `src/server/contract/openapi.js`
+- Regenerate OpenAPI document from source contract: `npm run generate:openapi`
+- Validate route inventory + OpenAPI sync by running `npm test` (`/v1/app/meta` and `docs/openapi.json` are both checked against the generated contract).
 
 Chat completion example:
 
@@ -157,7 +159,16 @@ Current CI provider: GitHub Actions.
 
 - Workflow: `.github/workflows/ci.yml`
 - Triggers: push and pull request
-- Jobs: `npm ci`, `npm test`
+- Jobs: `npm ci`, `npm run lint`, `npm run typecheck`, `npm test`
+
+## Contributor Notes
+
+Route inventory and OpenAPI sync:
+
+- Update route definitions in `src/server/contract/routes.js`.
+- Regenerate `docs/openapi.json` with `npm run generate:openapi`.
+- `/v1/app/meta` consumes route inventory from the same contract source (`getRouteInventory()`), so runtime route metadata and OpenAPI remain aligned.
+- `test/openapi-contract.test.js` fails if `docs/openapi.json` drifts from generated contract output.
 
 ## Environment
 
@@ -188,8 +199,9 @@ web/
   index.html              # static phase-3 app shell
   styles.css              # app shell styles
 docs/
+  API_CONTRACT_SYNC.md    # route inventory + OpenAPI source-of-truth workflow
   PHASE3_AUDIT.md         # commit-span audit + risks + next milestones
 test/
-  cli.test.js             # CLI unit tests
+  cli.test.js             # command-level CLI tests (registration + serve/status/list/info/search)
   server.test.js          # API integration tests
 ```
