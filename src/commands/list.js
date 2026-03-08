@@ -3,13 +3,13 @@ import { listInstalledModels } from "../models/manager.js";
 import { modelPool } from "../engine/pool.js";
 import { formatBytes } from "./utils.js";
 import { loadConfig } from "../lib/config.js";
-import { createOllamaClient, toOllamaModelId } from "../providers/ollama.js";
+import { discoverOllamaLocalModels } from "../providers/ollama-local.js";
 
 export function registerListCommand(program, deps = {}) {
   const listInstalledModelsFn = deps.listInstalledModels || listInstalledModels;
   const modelPoolApi = deps.modelPool || modelPool;
   const loadConfigFn = deps.loadConfig || loadConfig;
-  const createOllamaClientFn = deps.createOllamaClient || createOllamaClient;
+  const discoverOllamaLocalModelsFn = deps.discoverOllamaLocalModels || discoverOllamaLocalModels;
   const createTable = deps.createTable || ((options) => new Table(options));
   const log = deps.log || console.log;
 
@@ -23,13 +23,8 @@ export function registerListCommand(program, deps = {}) {
       let ollamaModels = [];
 
       if (config.ollamaEnabled) {
-        const ollamaClient = createOllamaClientFn({
-          enabled: config.ollamaEnabled,
-          baseUrl: config.ollamaBaseUrl
-        });
-
         try {
-          ollamaModels = await ollamaClient.listLocalModels();
+          ollamaModels = await discoverOllamaLocalModelsFn();
         } catch {
           ollamaModels = [];
         }
@@ -51,10 +46,10 @@ export function registerListCommand(program, deps = {}) {
 
       for (const model of ollamaModels) {
         table.push([
-          toOllamaModelId(model.name),
+          model.id,
           formatBytes(model.size),
           model.quant || "unknown",
-          "n/a",
+          loaded.has(model.id) ? "yes" : "no",
           "ollama:local"
         ]);
       }

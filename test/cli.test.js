@@ -92,25 +92,45 @@ test("run command supports one-shot prompt for local models", async () => {
 test("run command supports one-shot prompt for ollama/<model>", async () => {
   const logs = [];
   const calls = {
-    listed: 0,
-    chat: []
+    discovered: 0,
+    resolved: [],
+    loaded: [],
+    completions: []
   };
   const priorLog = console.log;
   console.log = (line) => logs.push(line);
 
   const cli = createCli({
     run: {
-      loadConfig: async () => ({ ollamaEnabled: true, ollamaBaseUrl: "http://127.0.0.1:11434" }),
-      createOllamaClient: () => ({
-        async listLocalModels() {
-          calls.listed += 1;
-          return [{ id: "ollama/llama3.2:latest" }];
-        },
-        async chat(payload) {
-          calls.chat.push(payload);
-          return "ollama-one-shot";
+      discoverOllamaLocalModels: async () => {
+        calls.discovered += 1;
+        return [
+          {
+            id: "ollama/llama3.2:latest",
+            name: "llama3.2:latest",
+            size: 2_048_000_000,
+            quant: "Q4_K_M",
+            family: "llama",
+            parameterSize: "3B",
+            modifiedAt: "2026-03-08T00:00:00.000Z",
+            ggufPath: "/tmp/ollama/blobs/sha256-abc"
+          }
+        ];
+      },
+      resolveOllamaLocalModel: async (modelName, { models }) => {
+        calls.resolved.push({ modelName, models });
+        return models[0];
+      },
+      modelPool: {
+        async load(name, options) {
+          calls.loaded.push({ name, options });
+          return { context: { id: "ctx" }, modelName: name, optimized: { gpuLayers: 12, threads: 8 } };
         }
-      })
+      },
+      chatCompletion: async (payload) => {
+        calls.completions.push(payload);
+        return "ollama-one-shot";
+      }
     }
   });
 
@@ -120,11 +140,15 @@ test("run command supports one-shot prompt for ollama/<model>", async () => {
     console.log = priorLog;
   }
 
-  assert.equal(calls.listed, 1);
-  assert.equal(calls.chat.length, 1);
-  assert.equal(calls.chat[0].model, "llama3.2:latest");
-  assert.equal(calls.chat[0].stream, false);
-  assert.deepEqual(calls.chat[0].messages, [{ role: "user", content: "summarize this" }]);
+  assert.equal(calls.discovered, 1);
+  assert.equal(calls.resolved.length, 1);
+  assert.equal(calls.resolved[0].modelName, "llama3.2:latest");
+  assert.equal(calls.loaded.length, 1);
+  assert.equal(calls.loaded[0].name, "ollama/llama3.2:latest");
+  assert.equal(calls.loaded[0].options.modelPath, "/tmp/ollama/blobs/sha256-abc");
+  assert.equal(calls.completions.length, 1);
+  assert.equal(calls.completions[0].stream, false);
+  assert.deepEqual(calls.completions[0].messages, [{ role: "user", content: "summarize this" }]);
   assert.deepEqual(logs, ["ollama-one-shot"]);
 });
 
@@ -231,17 +255,14 @@ test("list command renders installed models and load state", async () => {
         ollamaEnabled: true,
         ollamaBaseUrl: "http://127.0.0.1:11434"
       }),
-      createOllamaClient: () => ({
-        async listLocalModels() {
-          return [
-            {
-              name: "llama3.2:latest",
-              size: 2_048_000_000,
-              quant: "Q4_K_M"
-            }
-          ];
+      discoverOllamaLocalModels: async () => ([
+        {
+          id: "ollama/llama3.2:latest",
+          name: "llama3.2:latest",
+          size: 2_048_000_000,
+          quant: "Q4_K_M"
         }
-      }),
+      ]),
       listInstalledModels: async () => ([
         {
           name: "llama-test",
@@ -589,43 +610,31 @@ test("browse command sets exit code for invalid --pull index", async () => {
   assert.deepEqual(errors, ["Invalid pull index."]);
 });
 
-test("run command fails for ollama/<model> when provider is disabled", async () => {
+test("run command fails for ollama/<model> when local manifest model is missing", async () => {
   const cli = createCli({
     run: {
-      loadConfig: async () => ({ ollamaEnabled: false, ollamaBaseUrl: "http://127.0.0.1:11434" }),
-      createOllamaClient: () => ({
-        async listLocalModels() {
-          const err = new Error("Ollama provider is disabled.");
-          err.code = "ollama_disabled";
-          throw err;
-        }
-      })
+      discoverOllamaLocalModels: async () => ([]),
+      resolveOllamaLocalModel: async () => null
     }
   });
 
   await assert.rejects(
     cli.parseAsync(["node", "darksol", "run", "ollama/llama3.2:latest", "hello"]),
-    /disabled/
+    /not found locally/
   );
 });
 
-test("run command fails for ollama/<model> when provider is offline", async () => {
+test("run command fails for ollama/<model> when discovery returns no matching model", async () => {
   const cli = createCli({
     run: {
-      loadConfig: async () => ({ ollamaEnabled: true, ollamaBaseUrl: "http://127.0.0.1:11434" }),
-      createOllamaClient: () => ({
-        async listLocalModels() {
-          const err = new Error("Failed to connect to Ollama.");
-          err.code = "ollama_unreachable";
-          throw err;
-        }
-      })
+      discoverOllamaLocalModels: async () => ([]),
+      resolveOllamaLocalModel: async () => null
     }
   });
 
   await assert.rejects(
     cli.parseAsync(["node", "darksol", "run", "ollama/llama3.2:latest", "hello"]),
-    /connect to Ollama/
+    /not found locally/
   );
 });
 
@@ -650,11 +659,9 @@ test("list command tolerates offline Ollama provider and prints local models onl
   const cli = createCli({
     list: {
       loadConfig: async () => ({ ollamaEnabled: true, ollamaBaseUrl: "http://127.0.0.1:11434" }),
-      createOllamaClient: () => ({
-        async listLocalModels() {
-          throw new Error("connect ECONNREFUSED");
-        }
-      }),
+      discoverOllamaLocalModels: async () => {
+        throw new Error("read EACCES");
+      },
       listInstalledModels: async () => ([
         {
           name: "llama-test",

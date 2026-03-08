@@ -18,7 +18,7 @@ export function registerRmCommand(program, deps = {}) {
     .action(async (model) => {
       try {
         const name = await removeModelFn(model);
-        modelPoolApi.unload(name);
+        await modelPoolApi.unload(name);
         log(`Removed ${chalk.green(name)}`);
       } catch (error) {
         errorLog(`Failed to remove ${model}: ${error.message}`);
