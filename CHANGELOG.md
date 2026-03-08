@@ -1,6 +1,11 @@
 # Changelog
 
 ## Unreleased
+- Phase 8 kickoff: added desktop/web architecture spec at `docs/PHASE8_DESKTOP_WEB_ARCHITECTURE.md` with product boundary, shared components, branding references, and feature matrix.
+- Phase 8 kickoff: added non-breaking `desktop/` scaffold with entrypoint placeholders (`src/main.js`, `src/preload.js`) and Windows/macOS packaging path configs.
+- Phase 8 kickoff: upgraded web shell to desktop-mirror three-panel layout (`left nav`, `center chat/work area`, `right diagnostics`) using DARKSOL branding assets.
+- Expanded `/v1/app/meta` metadata to include desktop scaffold references plus additional branding/web layout fields.
+- Updated integration tests for app metadata references and refreshed web shell static content markers.
 - Phase 7 hardening: API provider routing now prefers local DARKSOL models for unprefixed model ids and automatically falls back to Ollama when local model is missing and Ollama is enabled.
 - Added deterministic server integration tests for unprefixed local-miss fallback behavior in `/v1/completions` and `/v1/chat/completions`.
 - Phase 7 reliability baseline: added shared inference queue controls for `/v1/completions` + `/v1/chat/completions` with configurable `inferenceConcurrency` (default `1`).

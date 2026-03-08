@@ -99,7 +99,7 @@ Default base URL: `http://127.0.0.1:11435`
 - `GET /v1/ollama/models` - list Ollama local models in OpenAI list format.
 - `GET /v1/directory/models` - search HuggingFace model directory with `q`, `limit`, and `task`.
 - `GET /v1/bankr/health` - Bankr gateway scaffold status (`configured`/`sandbox`) without secrets.
-- `GET /v1/app/meta` - app shell bootstrap metadata (name/version/routes + branding asset paths).
+- `GET /v1/app/meta` - app shell bootstrap metadata (name/version/routes + branding + desktop/web scaffold references).
 - `POST /v1/chat/completions` - OpenAI-compatible chat completions.
 - `POST /v1/completions` - OpenAI-compatible text completions.
   - Provider policy: explicit `ollama/<model>` ids always use Ollama; unprefixed model ids prefer local DARKSOL models and fall back to Ollama only when the local model is not installed and Ollama is enabled.
@@ -182,14 +182,21 @@ Generated outputs:
 
 `scripts/generate-icons.mjs` uses `sharp` and `png-to-ico` to generate PNG variants plus a multi-resolution `.ico`.
 
-## Web Shell
+## Desktop + Web GUI Foundation (Phase 8)
 
-A minimal local static shell is provided for future downloadable app UX:
+Desktop scaffold (primary service pack path):
+
+- `desktop/src/main.js` (desktop entrypoint placeholder)
+- `desktop/src/preload.js` (desktop bridge placeholder)
+- `desktop/config/packaging.win.json` (Windows packaging path placeholder)
+- `desktop/config/packaging.mac.json` (macOS packaging path placeholder)
+
+Web mirror shell (lighter UX scope):
 
 - `web/index.html`
 - `web/styles.css`
 
-These files are served by Fastify at `/web/*`, and branding files are served at `/assets/*`.
+The web shell now mirrors the desktop three-panel layout skeleton (left navigation, center chat/work area, right diagnostics panel). Files are served by Fastify at `/web/*`, and branding files are served at `/assets/*`.
 
 Static serving safety at this phase:
 
@@ -254,11 +261,16 @@ assets/
   footer-logo-darksol.png # source branding asset
   icons/                  # generated favicon/web icon pack
 web/
-  index.html              # static phase-3 app shell
-  styles.css              # app shell styles
+  index.html              # desktop-mirror web shell
+  styles.css              # desktop-mirror shell styles
 docs/
   API_CONTRACT_SYNC.md    # route inventory + OpenAPI source-of-truth workflow
+  PHASE8_DESKTOP_WEB_ARCHITECTURE.md # desktop/web split architecture + feature matrix
   PHASE3_AUDIT.md         # commit-span audit + risks + next milestones
+desktop/
+  src/main.js             # desktop app entrypoint placeholder
+  src/preload.js          # desktop preload bridge placeholder
+  config/                 # desktop packaging placeholders (win/macos)
 test/
   cli.test.js             # deterministic command-level CLI tests (serve/run/pull/list/rm/ps/info/browse/status/search + provider error paths)
   server.test.js          # API integration tests
