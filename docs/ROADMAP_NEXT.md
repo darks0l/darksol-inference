@@ -59,3 +59,9 @@ Completed in this chunk (Bankr scope: LLM Gateway integration only, no onchain t
 - Updated README and roadmap notes to reflect the exact chunk scope and outputs
 
 Remaining Phase 7 work continues from the plan sections above.
+
+Completed in this chunk (Phase 7 queue/reliability baseline):
+
+- Added shared inference request queue across `/v1/completions` and `/v1/chat/completions` with configurable concurrency (`inferenceConcurrency`, default `1`).
+- Added provider invocation controls with per-attempt timeout (`providerTimeoutMs`, default `15000`) and transient single-retry baseline (`providerRetryCount`, default `1`).
+- Added deterministic integration tests for queue serialization, transient retry success, and timeout error behavior (`provider_timeout`) without flaky wall-clock timing.

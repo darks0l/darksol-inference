@@ -103,6 +103,7 @@ Default base URL: `http://127.0.0.1:11435`
 - `POST /v1/chat/completions` - OpenAI-compatible chat completions.
 - `POST /v1/completions` - OpenAI-compatible text completions.
   - Provider policy: explicit `ollama/<model>` ids always use Ollama; unprefixed model ids prefer local DARKSOL models and fall back to Ollama only when the local model is not installed and Ollama is enabled.
+  - Runtime policy: both inference routes share a request queue with configurable concurrency (`inferenceConcurrency`, default `1`) plus provider timeout/retry guards (`providerTimeoutMs`, default `15000`; `providerRetryCount`, default `1` retry for transient errors).
 - `POST /v1/embeddings` - OpenAI-compatible embeddings.
 
 API contract:
@@ -220,6 +221,12 @@ Route inventory and OpenAPI sync:
 - `BANKR_SANDBOX` (optional, default `true`): mark Bankr client as sandbox mode.
 - `DARKSOL_OLLAMA_ENABLED` (optional, default `true`): enable/disable Ollama interoperability.
 - `DARKSOL_OLLAMA_BASE_URL` (optional, default `http://127.0.0.1:11434`): Ollama HTTP endpoint.
+
+`~/.darksol/config.json` runtime controls (optional):
+
+- `inferenceConcurrency` (default `1`): max concurrent in-flight requests across `/v1/completions` and `/v1/chat/completions`.
+- `providerTimeoutMs` (default `15000`): per-attempt provider call timeout.
+- `providerRetryCount` (default `1`): retry count for transient provider errors (timeouts, upstream `5xx`, connectivity faults).
 
 Remote Ollama host example:
 

@@ -3,6 +3,9 @@
 ## Unreleased
 - Phase 7 hardening: API provider routing now prefers local DARKSOL models for unprefixed model ids and automatically falls back to Ollama when local model is missing and Ollama is enabled.
 - Added deterministic server integration tests for unprefixed local-miss fallback behavior in `/v1/completions` and `/v1/chat/completions`.
+- Phase 7 reliability baseline: added shared inference queue controls for `/v1/completions` + `/v1/chat/completions` with configurable `inferenceConcurrency` (default `1`).
+- Phase 7 reliability baseline: added provider call timeout/retry wrapper (`providerTimeoutMs` default `15000`, `providerRetryCount` default `1`) and OpenAI-style `provider_timeout` error mapping.
+- Added deterministic integration tests for queue serialization, transient provider retry, and timeout/retry behavior.
 
 ## 0.1.2
 - README aligned to DARKSOL package treatment used across other repos/pages (banner, badges, footer voice).
