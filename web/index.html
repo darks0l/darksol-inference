@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DARKSOL Inference Shell</title>
+    <meta name="description" content="Local DARKSOL Inference shell for future downloadable app UX." />
+    <link rel="icon" type="image/png" sizes="32x32" href="../assets/icons/favicon-32x32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../assets/icons/apple-touch-icon.png" />
+    <link rel="manifest" href="../assets/icons/site.webmanifest" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="hero">
+        <img src="../assets/footer-logo-darksol.png" alt="DARKSOL logo" class="logo" />
+        <div>
+          <p class="eyebrow">Local Inference Console</p>
+          <h1>DARKSOL Dashboard</h1>
+          <p class="subtitle">Static shell for upcoming downloadable app workflows.</p>
+        </div>
+      </header>
+
+      <section class="grid" aria-label="Status cards">
+        <article class="card">
+          <h2>Server</h2>
+          <p class="status online">Online</p>
+          <p>API: <code>/health</code>, <code>/v1/*</code></p>
+        </article>
+        <article class="card">
+          <h2>Models</h2>
+          <p class="status idle">Idle</p>
+          <p>View installed models via <code>/v1/models</code>.</p>
+        </article>
+        <article class="card">
+          <h2>Bankr Gateway</h2>
+          <p class="status sandbox">Sandbox</p>
+          <p>Health check available at <code>/v1/bankr/health</code>.</p>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>

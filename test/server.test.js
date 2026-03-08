@@ -58,6 +58,21 @@ test("GET /v1/models returns OpenAI-style model list", async () => {
   assert.ok(Array.isArray(body.data));
 });
 
+test("GET /v1/app/meta returns app bootstrap metadata", async () => {
+  const response = await fetch(`${baseUrl}/v1/app/meta`);
+  const body = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(body.app.name, "DARKSOL Inference");
+  assert.equal(body.app.packageName, "darksol");
+  assert.ok(typeof body.app.version === "string");
+  assert.ok(Array.isArray(body.routes));
+  assert.ok(body.routes.some((route) => route.method === "GET" && route.path === "/v1/app/meta"));
+  assert.equal(body.branding.logo, "/assets/footer-logo-darksol.png");
+  assert.equal(body.branding.manifest, "/assets/icons/site.webmanifest");
+  assert.equal(body.web.shell, "/web/index.html");
+});
+
 test("POST /v1/chat/completions returns 400 when model is missing", async () => {
   const { response, payload } = await postJson("/v1/chat/completions", {
       messages: [{ role: "user", content: "hi" }]

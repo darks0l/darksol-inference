@@ -7,6 +7,7 @@ import { registerModelsRoutes } from "./routes/models.js";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerDirectoryRoutes } from "./routes/directory.js";
 import { registerBankrRoutes } from "./routes/bankr.js";
+import { registerAppRoutes } from "./routes/app.js";
 import { logger } from "../lib/logger.js";
 
 export async function buildServer({ apiKey, fetchImpl } = {}) {
@@ -23,6 +24,7 @@ export async function buildServer({ apiKey, fetchImpl } = {}) {
   await registerModelsRoutes(fastify);
   await registerDirectoryRoutes(fastify, { fetchImpl });
   await registerBankrRoutes(fastify);
+  await registerAppRoutes(fastify);
   await registerChatRoutes(fastify);
   await registerCompletionsRoutes(fastify);
   await registerEmbeddingsRoutes(fastify);

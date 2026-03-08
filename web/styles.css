@@ -1,0 +1,99 @@
+:root {
+  --bg: #060b1a;
+  --panel: #101a35;
+  --panel-border: #223059;
+  --text: #e6ecff;
+  --muted: #9eadd8;
+  --accent: #31d3a6;
+  --warn: #f8c156;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 15% 15%, #172c6a 0%, transparent 42%),
+    radial-gradient(circle at 85% 25%, #0d5d7d 0%, transparent 35%),
+    linear-gradient(135deg, #050916 0%, #0b1633 100%);
+}
+
+.app {
+  width: min(1080px, 92vw);
+  margin: 0 auto;
+  padding: 48px 0 72px;
+}
+
+.hero {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 36px;
+}
+
+.logo {
+  width: 108px;
+  height: 108px;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.45));
+}
+
+.eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+h1 {
+  margin: 6px 0 10px;
+  font-size: clamp(28px, 4vw, 44px);
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--muted);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  padding: 20px;
+  border: 1px solid var(--panel-border);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(22, 36, 76, 0.85), rgba(9, 15, 33, 0.95));
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+}
+
+.card h2 {
+  margin: 0 0 12px;
+  font-size: 20px;
+}
+
+.status {
+  margin: 0 0 10px;
+  font-weight: 700;
+}
+
+.online {
+  color: var(--accent);
+}
+
+.idle,
+.sandbox {
+  color: var(--warn);
+}
+
+code {
+  color: #9cdfff;
+}
