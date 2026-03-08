@@ -13,6 +13,7 @@ export async function registerAppRoutes(fastify) {
     routes: getRouteInventory(),
     branding: {
       logo: "/assets/footer-logo-darksol.png",
+      banner: "/assets/darksol-banner.png",
       favicon32: "/assets/icons/favicon-32x32.png",
       appleTouchIcon: "/assets/icons/apple-touch-icon.png",
       faviconIco: "/assets/icons/favicon.ico",
@@ -20,7 +21,17 @@ export async function registerAppRoutes(fastify) {
     },
     web: {
       shell: "/web/index.html",
-      styles: "/web/styles.css"
+      styles: "/web/styles.css",
+      layout: "desktop-mirror-three-panel"
+    },
+    desktop: {
+      scaffoldRoot: "/desktop",
+      entrypoint: "desktop/src/main.js",
+      preload: "desktop/src/preload.js",
+      packaging: {
+        windows: "desktop/config/packaging.win.json",
+        macos: "desktop/config/packaging.mac.json"
+      }
     }
   }));
 }

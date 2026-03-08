@@ -3,41 +3,85 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>DARKSOL Inference Shell</title>
-    <meta name="description" content="Local DARKSOL Inference shell for future downloadable app UX." />
+    <title>DARKSOL Inference Workspace</title>
+    <meta name="description" content="Desktop-mirror web shell for DARKSOL Inference workflows." />
     <link rel="icon" type="image/png" sizes="32x32" href="../assets/icons/favicon-32x32.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="../assets/icons/apple-touch-icon.png" />
     <link rel="manifest" href="../assets/icons/site.webmanifest" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <main class="app">
-      <header class="hero">
-        <img src="../assets/footer-logo-darksol.png" alt="DARKSOL logo" class="logo" />
-        <div>
-          <p class="eyebrow">Local Inference Console</p>
-          <h1>DARKSOL Dashboard</h1>
-          <p class="subtitle">Static shell for upcoming downloadable app workflows.</p>
+    <div class="workspace" role="application" aria-label="DARKSOL desktop mirror shell">
+      <aside class="left-rail" aria-label="Main navigation">
+        <div class="brand">
+          <img src="../assets/footer-logo-darksol.png" alt="DARKSOL logo" class="logo" />
+          <div>
+            <p class="label">DARKSOL</p>
+            <h1>Inference</h1>
+          </div>
         </div>
-      </header>
 
-      <section class="grid" aria-label="Status cards">
-        <article class="card">
-          <h2>Server</h2>
-          <p class="status online">Online</p>
-          <p>API: <code>/health</code>, <code>/v1/*</code></p>
-        </article>
-        <article class="card">
-          <h2>Models</h2>
-          <p class="status idle">Idle</p>
-          <p>View installed models via <code>/v1/models</code>.</p>
-        </article>
-        <article class="card">
-          <h2>Bankr Gateway</h2>
-          <p class="status sandbox">Sandbox</p>
-          <p>Health check available at <code>/v1/bankr/health</code>.</p>
-        </article>
-      </section>
-    </main>
+        <nav>
+          <a href="#" class="nav-item active">Console</a>
+          <a href="#" class="nav-item">Models</a>
+          <a href="#" class="nav-item">Sessions</a>
+          <a href="#" class="nav-item">Gateway</a>
+          <a href="#" class="nav-item">Settings</a>
+        </nav>
+
+        <section class="asset-note" aria-label="Branding reference">
+          <p>Branding Asset</p>
+          <img src="../assets/darksol-banner.png" alt="DARKSOL banner treatment" class="banner" />
+        </section>
+      </aside>
+
+      <main class="center-panel" aria-label="Chat and work area">
+        <header class="panel-header">
+          <p class="eyebrow">Desktop-Mirror Web Shell</p>
+          <h2>Chat and Workflow Workspace</h2>
+        </header>
+
+        <section class="chat-thread" aria-label="Conversation placeholder">
+          <article class="message system">
+            <p class="role">System</p>
+            <p>Phase 8 foundation active. Desktop and web shells now align on layout primitives.</p>
+          </article>
+          <article class="message user">
+            <p class="role">User</p>
+            <p>Show model install status and available providers.</p>
+          </article>
+          <article class="message assistant">
+            <p class="role">Assistant</p>
+            <p>Placeholder response region for upcoming tool-use and gateway panels.</p>
+          </article>
+        </section>
+
+        <footer class="composer" aria-label="Composer placeholder">
+          <div class="input">Type a prompt or slash command...</div>
+          <button type="button">Send</button>
+        </footer>
+      </main>
+
+      <aside class="right-rail" aria-label="Context and diagnostics">
+        <section class="stack-card">
+          <h3>Runtime</h3>
+          <p>Server: <code>/health</code></p>
+          <p>API: <code>/v1/*</code></p>
+        </section>
+
+        <section class="stack-card">
+          <h3>Provider Panel</h3>
+          <p>DARKSOL local models</p>
+          <p>Ollama fallback</p>
+          <p>Bankr gateway placeholder</p>
+        </section>
+
+        <section class="stack-card">
+          <h3>Desktop Pack</h3>
+          <p>Windows: <code>desktop/config/packaging.win.json</code></p>
+          <p>macOS: <code>desktop/config/packaging.mac.json</code></p>
+        </section>
+      </aside>
+    </div>
   </body>
 </html>

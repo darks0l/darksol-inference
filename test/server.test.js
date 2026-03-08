@@ -154,8 +154,13 @@ test("GET /v1/app/meta returns app bootstrap metadata", async () => {
   assert.ok(Array.isArray(body.routes));
   assert.ok(body.routes.some((route) => route.method === "GET" && route.path === "/v1/app/meta"));
   assert.equal(body.branding.logo, "/assets/footer-logo-darksol.png");
+  assert.equal(body.branding.banner, "/assets/darksol-banner.png");
   assert.equal(body.branding.manifest, "/assets/icons/site.webmanifest");
   assert.equal(body.web.shell, "/web/index.html");
+  assert.equal(body.web.layout, "desktop-mirror-three-panel");
+  assert.equal(body.desktop.entrypoint, "desktop/src/main.js");
+  assert.equal(body.desktop.packaging.windows, "desktop/config/packaging.win.json");
+  assert.equal(body.desktop.packaging.macos, "desktop/config/packaging.mac.json");
 });
 
 test("GET /web/index.html serves static shell HTML", async () => {
@@ -164,7 +169,8 @@ test("GET /web/index.html serves static shell HTML", async () => {
 
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") || "", /^text\/html\b/i);
-  assert.match(body, /DARKSOL Dashboard/);
+  assert.match(body, /DARKSOL Inference Workspace/);
+  assert.match(body, /Desktop-Mirror Web Shell/);
 });
 
 test("GET /assets/icons/favicon-32x32.png serves static icon PNG", async () => {
