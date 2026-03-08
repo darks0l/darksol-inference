@@ -20,10 +20,12 @@ export function registerRunCommand(program, deps = {}) {
 
   program
     .command("run")
-    .description("Interactive terminal chat")
+    .description("Interactive terminal chat or one-shot prompt")
     .argument("<model>", "model alias or local name")
-    .action(async (model) => {
+    .argument("[prompt...]", "optional one-shot prompt")
+    .action(async (model, promptParts = []) => {
       const config = await loadConfigFn();
+      const oneShotPrompt = Array.isArray(promptParts) ? promptParts.join(" ").trim() : "";
 
       if (isOllamaModelId(model)) {
         const ollamaModel = toOllamaModelName(model);
@@ -33,6 +35,17 @@ export function registerRunCommand(program, deps = {}) {
         });
 
         await ollamaClient.listLocalModels();
+
+        if (oneShotPrompt) {
+          const response = await ollamaClient.chat({
+            model: ollamaModel,
+            messages: [{ role: "user", content: oneShotPrompt }],
+            stream: false
+          });
+          console.log(response);
+          return;
+        }
+
         console.log(chalk.green(`Model ready: ${model}`));
         console.log("Type /exit to quit, /clear to clear history.");
 
@@ -96,6 +109,17 @@ export function registerRunCommand(program, deps = {}) {
       }
 
       const poolItem = await modelPoolApi.load(installed.metadata.name);
+
+      if (oneShotPrompt) {
+        const response = await chatCompletionFn({
+          context: poolItem.context,
+          messages: [{ role: "user", content: oneShotPrompt }],
+          stream: false
+        });
+        console.log(response);
+        return;
+      }
+
       console.log(chalk.green(`Model ready: ${installed.metadata.name}`));
       console.log("Type /exit to quit, /info for runtime info, /clear to clear history.");
 

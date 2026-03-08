@@ -8,6 +8,8 @@
 - Hardware detection and inference optimization
 
 ## Unreleased
+- Phase 7 kickoff: added `darksol run <model> [prompt...]` one-shot mode for both local and `ollama/<model>` targets while preserving interactive chat mode.
+- Phase 7 kickoff: expanded CLI tests to cover one-shot local + Ollama run flows with deterministic dependency stubs.
 - Phase 6: added Ollama provider client with configurable base URL (`DARKSOL_OLLAMA_BASE_URL` / config `ollamaBaseUrl`) and enable flag (`DARKSOL_OLLAMA_ENABLED` / config `ollamaEnabled`).
 - Phase 6: added Ollama model discovery route `GET /v1/ollama/models` and integrated Ollama inventory into `GET /v1/models` when enabled.
 - Phase 6: added OpenAI-compatible chat/completion routing for explicit `ollama/<model>` ids and OpenAI-style API error envelopes for Ollama connectivity/model failures.

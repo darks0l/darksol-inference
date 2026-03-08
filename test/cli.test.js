@@ -45,6 +45,89 @@ test("search command prints concise directory rows", async () => {
   assert.match(logs[0], /^meta-llama\/Llama-3.2-3B-Instruct\tdownloads=123456\tlikes=420\ttask=text-generation$/);
 });
 
+test("run command supports one-shot prompt for local models", async () => {
+  const logs = [];
+  const calls = {
+    ensured: [],
+    loaded: [],
+    completions: []
+  };
+  const priorLog = console.log;
+  console.log = (line) => logs.push(line);
+
+  const cli = createCli({
+    run: {
+      loadConfig: async () => ({ ollamaEnabled: true, ollamaBaseUrl: "http://127.0.0.1:11434" }),
+      ensureModelInstalled: async (name) => {
+        calls.ensured.push(name);
+        return { downloaded: false, metadata: { name: "llama-test" } };
+      },
+      modelPool: {
+        async load(name) {
+          calls.loaded.push(name);
+          return { context: { id: "ctx" }, modelName: name, optimized: { gpuLayers: 12, threads: 8 } };
+        }
+      },
+      chatCompletion: async (payload) => {
+        calls.completions.push(payload);
+        return "local-one-shot";
+      }
+    }
+  });
+
+  try {
+    await cli.parseAsync(["node", "darksol", "run", "llama-3.2-3b", "hello", "world"]);
+  } finally {
+    console.log = priorLog;
+  }
+
+  assert.deepEqual(calls.ensured, ["llama-3.2-3b"]);
+  assert.deepEqual(calls.loaded, ["llama-test"]);
+  assert.equal(calls.completions.length, 1);
+  assert.equal(calls.completions[0].stream, false);
+  assert.deepEqual(calls.completions[0].messages, [{ role: "user", content: "hello world" }]);
+  assert.deepEqual(logs, ["local-one-shot"]);
+});
+
+test("run command supports one-shot prompt for ollama/<model>", async () => {
+  const logs = [];
+  const calls = {
+    listed: 0,
+    chat: []
+  };
+  const priorLog = console.log;
+  console.log = (line) => logs.push(line);
+
+  const cli = createCli({
+    run: {
+      loadConfig: async () => ({ ollamaEnabled: true, ollamaBaseUrl: "http://127.0.0.1:11434" }),
+      createOllamaClient: () => ({
+        async listLocalModels() {
+          calls.listed += 1;
+          return [{ id: "ollama/llama3.2:latest" }];
+        },
+        async chat(payload) {
+          calls.chat.push(payload);
+          return "ollama-one-shot";
+        }
+      })
+    }
+  });
+
+  try {
+    await cli.parseAsync(["node", "darksol", "run", "ollama/llama3.2:latest", "summarize", "this"]);
+  } finally {
+    console.log = priorLog;
+  }
+
+  assert.equal(calls.listed, 1);
+  assert.equal(calls.chat.length, 1);
+  assert.equal(calls.chat[0].model, "llama3.2:latest");
+  assert.equal(calls.chat[0].stream, false);
+  assert.deepEqual(calls.chat[0].messages, [{ role: "user", content: "summarize this" }]);
+  assert.deepEqual(logs, ["ollama-one-shot"]);
+});
+
 test("serve command persists config, preloads model, and starts server", async () => {
   const calls = {
     ensured: [],
