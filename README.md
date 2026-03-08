@@ -1,5 +1,21 @@
 # darksol
 
-Local LLM inference server with cloud gateway fallback, model directory, and hardware-aware optimization.
+Phase 1 MVP local inference engine.
 
-Built with teeth. 🌑
+## Install
+
+```bash
+npm install
+```
+
+## CLI
+
+```bash
+node bin/darksol.js --help
+```
+
+## API
+
+```bash
+node bin/darksol.js serve
+```

@@ -2,13 +2,26 @@
   "name": "darksol",
   "version": "0.1.0",
   "description": "Local LLM inference server with cloud gateway fallback, model directory, and hardware-aware optimization",
-  "main": "index.js",
+  "main": "src/cli.js",
   "type": "module",
   "bin": {
     "darksol": "bin/darksol.js"
   },
   "scripts": {
-    "test": "echo \"Coming soon\" && exit 0"
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "chalk": "^5.0.0",
+    "cli-table3": "^0.6.0",
+    "commander": "^14.0.0",
+    "fastify": "^5.0.0",
+    "node-fetch": "^3.0.0",
+    "node-llama-cpp": "latest",
+    "ora": "^9.0.0",
+    "systeminformation": "^5.0.0"
   },
   "keywords": ["llm", "inference", "local-ai", "ollama", "gguf", "llama.cpp", "gpu", "cli", "ai", "darksol"],
   "author": "Darksol <chris00claw@gmail.com>",
