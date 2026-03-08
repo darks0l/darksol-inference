@@ -34,23 +34,23 @@ async function resolveGgufFile(repo, fileHint) {
     const hint = fileHint.toLowerCase();
     const exact = ggufFiles.find((file) => file.toLowerCase() === hint || file.toLowerCase().endsWith(`/${hint}`));
     if (exact) {
-      return exact;
+      return { fileName: exact, info };
     }
 
     const byContains = ggufFiles.find((file) => file.toLowerCase().includes(hint) || file.toLowerCase().includes(`${hint}.gguf`));
     if (byContains) {
-      return byContains;
+      return { fileName: byContains, info };
     }
   }
 
-  return ggufFiles[0];
+  return { fileName: ggufFiles[0], info };
 }
 
 export async function downloadModel({ spec, onProgress }) {
   const targetDir = modelDir(spec.localName);
   await fsPromises.mkdir(targetDir, { recursive: true });
 
-  const fileName = await resolveGgufFile(spec.repo, spec.fileHint);
+  const { fileName, info } = await resolveGgufFile(spec.repo, spec.fileHint);
   const url = `https://huggingface.co/${spec.repo}/resolve/main/${fileName}?download=true`;
   const response = await fetch(url, { headers: createRequestHeaders() });
 
@@ -99,7 +99,9 @@ export async function downloadModel({ spec, onProgress }) {
     filePath: destination,
     downloadedAt: new Date().toISOString(),
     size: downloaded,
-    quant: extractQuant(fileName)
+    quant: extractQuant(fileName),
+    family: normalizeFamily(info?.pipeline_tag),
+    parameterSize: extractParameterSize(fileName)
   };
 
   await fsPromises.writeFile(modelMetadataPath(spec.localName), `${JSON.stringify(metadata, null, 2)}\n`, "utf8");
@@ -110,4 +112,28 @@ export async function downloadModel({ spec, onProgress }) {
 function extractQuant(fileName) {
   const matches = fileName.match(/q\d(?:_[a-z0-9]+)?/i);
   return matches ? matches[0].toUpperCase() : "unknown";
+}
+
+function extractParameterSize(fileName) {
+  const match = String(fileName).match(/(?:^|[-_])(\d+(?:\.\d+)?)(b)(?:[-_.]|$)/i);
+  if (!match) {
+    return null;
+  }
+  return `${match[1].toUpperCase()}${match[2].toUpperCase()}`;
+}
+
+function normalizeFamily(pipelineTag) {
+  if (!pipelineTag || typeof pipelineTag !== "string") {
+    return null;
+  }
+
+  if (pipelineTag.includes("feature-extraction")) {
+    return "embedding";
+  }
+
+  if (pipelineTag.includes("text-generation")) {
+    return "text-generation";
+  }
+
+  return pipelineTag;
 }

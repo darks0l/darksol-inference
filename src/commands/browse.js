@@ -1,10 +1,36 @@
+import readline from "node:readline/promises";
+import { stdin as input, stdout as output } from "node:process";
 import Table from "cli-table3";
 import { browseModels } from "../models/directory.js";
 import { ensureModelInstalled } from "../models/manager.js";
 
+async function promptForModelIndex(models) {
+  if (!input.isTTY || !output.isTTY) {
+    return null;
+  }
+
+  const rl = readline.createInterface({ input, output });
+  try {
+    const answer = (await rl.question("Enter model # to pull (or press Enter to skip): ")).trim();
+    if (!answer) {
+      return null;
+    }
+
+    const parsed = Number(answer);
+    if (!Number.isInteger(parsed) || parsed < 1 || parsed > models.length) {
+      throw new Error("Invalid pull index.");
+    }
+
+    return parsed;
+  } finally {
+    rl.close();
+  }
+}
+
 export function registerBrowseCommand(program, deps = {}) {
   const browseModelsFn = deps.browseModels || browseModels;
   const ensureModelInstalledFn = deps.ensureModelInstalled || ensureModelInstalled;
+  const promptForModelIndexFn = deps.promptForModelIndex || promptForModelIndex;
   const createTable = deps.createTable || ((options) => new Table(options));
   const log = deps.log || console.log;
   const errorLog = deps.errorLog || console.error;
@@ -42,8 +68,21 @@ export function registerBrowseCommand(program, deps = {}) {
 
       log(table.toString());
 
+      let pullIndex = null;
       if (options.pull) {
-        const index = Number(options.pull) - 1;
+        pullIndex = Number(options.pull);
+      } else if (models.length > 0) {
+        try {
+          pullIndex = await promptForModelIndexFn(models);
+        } catch (error) {
+          errorLog(error.message);
+          setExitCode(1);
+          return;
+        }
+      }
+
+      if (pullIndex !== null) {
+        const index = pullIndex - 1;
         const selected = models[index];
         if (!selected) {
           errorLog("Invalid pull index.");

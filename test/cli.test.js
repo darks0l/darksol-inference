@@ -174,17 +174,40 @@ test("serve command persists config, preloads model, and starts server", async (
       modelPool: {
         async load(name) {
           calls.loaded.push(name);
+          return { modelName: name };
         }
       },
+      loadConfig: async () => ({
+        host: "127.0.0.1",
+        port: 11435,
+        apiKey: null,
+        ollamaBaseUrl: "http://127.0.0.1:11434",
+        ollamaEnabled: true
+      }),
       saveConfig: async (config) => {
         calls.savedConfig.push(config);
+        return {
+          ...config,
+          ollamaBaseUrl: "http://127.0.0.1:11434",
+          ollamaEnabled: true
+        };
       },
       startServer: async (options) => {
         calls.started.push(options);
+        return {
+          server: {
+            address() {
+              return { address: "0.0.0.0", port: options.port };
+            }
+          },
+          async close() {}
+        };
       },
       log: (line) => {
         calls.logs.push(line);
-      }
+      },
+      bindSignal() {},
+      unbindSignal() {}
     }
   });
 
@@ -205,10 +228,87 @@ test("serve command persists config, preloads model, and starts server", async (
   assert.deepEqual(calls.ensured, ["llama-3.2-3b"]);
   assert.deepEqual(calls.loaded, ["llama-test"]);
   assert.deepEqual(calls.savedConfig, [{ host: "0.0.0.0", port: 12000, apiKey: "secret" }]);
-  assert.deepEqual(calls.started, [{ host: "0.0.0.0", port: 12000, apiKey: "secret" }]);
+  assert.deepEqual(calls.started, [{
+    host: "0.0.0.0",
+    port: 12000,
+    apiKey: "secret",
+    ollamaBaseUrl: "http://127.0.0.1:11434",
+    ollamaEnabled: true
+  }]);
   assert.ok(calls.logs.some((line) => line.includes("Hardware: Test CPU")));
   assert.ok(calls.logs.some((line) => line.includes("Preloaded model llama-test")));
   assert.ok(calls.logs.some((line) => line.includes("darksol server listening on http://0.0.0.0:12000")));
+  assert.ok(calls.logs.some((line) => line.includes("Loaded models: llama-test")));
+});
+
+test("serve command uses saved config defaults and auto-preloads first installed model", async () => {
+  const calls = {
+    loaded: [],
+    started: [],
+    savedConfig: []
+  };
+
+  const cli = createCli({
+    serve: {
+      detectHardware: async () => ({
+        cpu: { brand: "Test CPU" },
+        gpus: [],
+        totalVramMb: 0
+      }),
+      loadConfig: async () => ({
+        host: "127.0.0.2",
+        port: 22334,
+        apiKey: "from-config",
+        ollamaBaseUrl: "http://127.0.0.1:11434",
+        ollamaEnabled: true,
+        defaultModel: null
+      }),
+      listInstalledModels: async () => ([
+        { name: "auto-model", size: 100, quant: "Q4_K_M" }
+      ]),
+      modelPool: {
+        async load(name) {
+          calls.loaded.push(name);
+          return { modelName: name };
+        },
+        listLoaded() {
+          return [{ name: "auto-model" }];
+        },
+        async unload() {}
+      },
+      saveConfig: async (config) => {
+        calls.savedConfig.push(config);
+        return { ...config, ollamaBaseUrl: "http://127.0.0.1:11434", ollamaEnabled: true };
+      },
+      startServer: async (options) => {
+        calls.started.push(options);
+        return {
+          server: {
+            address() {
+              return { address: "127.0.0.2", port: 22334 };
+            }
+          },
+          async close() {}
+        };
+      },
+      bindSignal() {},
+      unbindSignal() {},
+      log() {},
+      errorLog() {}
+    }
+  });
+
+  await cli.parseAsync(["node", "darksol", "serve"]);
+
+  assert.deepEqual(calls.loaded, ["auto-model"]);
+  assert.deepEqual(calls.savedConfig, [{ host: "127.0.0.2", port: 22334, apiKey: "from-config" }]);
+  assert.deepEqual(calls.started, [{
+    host: "127.0.0.2",
+    port: 22334,
+    apiKey: "from-config",
+    ollamaBaseUrl: "http://127.0.0.1:11434",
+    ollamaEnabled: true
+  }]);
 });
 
 test("status command reports online server, hardware, and loaded models", async () => {
@@ -325,6 +425,8 @@ test("info command prints installed metadata and runtime details", async () => {
           };
         }
       },
+      discoverOllamaLocalModels: async () => ([]),
+      resolveOllamaLocalModel: async () => null,
       log: (line) => {
         logs.push(line);
       }
@@ -334,10 +436,51 @@ test("info command prints installed metadata and runtime details", async () => {
   await cli.parseAsync(["node", "darksol", "info", "llama-3.2-3b"]);
 
   assert.ok(logs.some((line) => line === "Name: llama-test"));
+  assert.ok(logs.some((line) => line === "Family: unknown"));
+  assert.ok(logs.some((line) => line === "Parameters: unknown"));
   assert.ok(logs.some((line) => line === "Loaded: yes"));
   assert.ok(logs.some((line) => line === "GPU Layers: 30"));
   assert.ok(logs.some((line) => line === "Threads: 12"));
   assert.ok(logs.some((line) => line === "Context: 8192"));
+});
+
+test("info command prints Ollama local metadata when no darksol install exists", async () => {
+  const logs = [];
+  const cli = createCli({
+    info: {
+      resolveModelSpec: () => ({ localName: "llama3.2-latest" }),
+      getInstalledModel: async () => null,
+      discoverOllamaLocalModels: async () => ([
+        {
+          id: "ollama/llama3.2:latest",
+          name: "llama3.2:latest",
+          ggufPath: "/tmp/.ollama/models/blobs/sha256-abc",
+          size: 123,
+          quant: "Q4_K_M",
+          family: "llama",
+          parameterSize: "3B",
+          modifiedAt: "2026-03-08T00:00:00.000Z"
+        }
+      ]),
+      resolveOllamaLocalModel: async (_modelName, { models }) => models[0],
+      modelPool: {
+        get() {
+          return null;
+        }
+      },
+      log: (line) => {
+        logs.push(line);
+      }
+    }
+  });
+
+  await cli.parseAsync(["node", "darksol", "info", "ollama/llama3.2:latest"]);
+
+  assert.ok(logs.some((line) => line === "Name: ollama/llama3.2:latest"));
+  assert.ok(logs.some((line) => line === "GGUF Path: /tmp/.ollama/models/blobs/sha256-abc"));
+  assert.ok(logs.some((line) => line === "Quant: Q4_K_M"));
+  assert.ok(logs.some((line) => line === "Family: llama"));
+  assert.ok(logs.some((line) => line === "Parameters: 3B"));
 });
 
 test("pull command reports install success with deterministic spinner updates", async () => {
@@ -625,6 +768,32 @@ test("browse command renders rows and supports deterministic --pull flow", async
     "Pulling meta-llama/Llama-3.2-3B-Instruct-GGUF ...",
     "Installed meta-llama/Llama-3.2-3B-Instruct-GGUF"
   ]);
+});
+
+test("browse command supports interactive pull prompt", async () => {
+  const pulled = [];
+  const cli = createCli({
+    browse: {
+      browseModels: async () => ([
+        { id: "model-1", downloads: 12, updatedAt: "2026-03-01T00:00:00.000Z", tags: ["gguf"] },
+        { id: "model-2", downloads: 10, updatedAt: "2026-03-02T00:00:00.000Z", tags: ["gguf"] }
+      ]),
+      promptForModelIndex: async () => 2,
+      ensureModelInstalled: async (id) => {
+        pulled.push(id);
+      },
+      createTable: () => ({
+        push() {},
+        toString() {
+          return "browse-table";
+        }
+      }),
+      log() {}
+    }
+  });
+
+  await cli.parseAsync(["node", "darksol", "browse"]);
+  assert.deepEqual(pulled, ["model-2"]);
 });
 
 test("browse command sets exit code for invalid --pull index", async () => {

@@ -1,6 +1,12 @@
 # Changelog
 
 ## Unreleased
+- MVP hardening: wired real embeddings execution path through `node-llama-cpp` embedding contexts (`src/engine/embeddings.js`) and upgraded `/v1/embeddings` to support both string and string-array inputs with deterministic embedding list responses.
+- MVP hardening: expanded `darksol info <model>` to surface richer metadata across both darksol-installed models and Ollama local discovery, including GGUF path, size, quantization, family, and parameter size when available.
+- MVP hardening: upgraded `darksol browse` with optional interactive pull selection (TTY-aware) while preserving explicit `--pull` index flow and real download installation behavior.
+- MVP hardening: improved `darksol serve` startup with saved-config defaults, automatic model preloading, startup loaded-model diagnostics, and graceful SIGINT/SIGTERM shutdown cleanup.
+- MVP hardening: added clearer common failure messaging for no models installed, model-too-large-for-memory scenarios, and corrupt/incompatible GGUF loading paths.
+- Added deterministic tests for embeddings engine/route behavior plus expanded CLI coverage for serve config preload defaults, interactive browse flow, and Ollama-backed info metadata output.
 - MVP hardening: wired robust SSE token streaming for `/v1/chat/completions` and `/v1/completions` with local `node-llama-cpp` streaming iterators, Ollama stream passthrough, and client-disconnect abort handling.
 - MVP hardening: upgraded HuggingFace model pull path to real streamed GGUF downloads with auth-token headers (`HUGGINGFACE_TOKEN`/`HF_TOKEN`), temp-file safety, cleanup-on-failure, and progress callback updates.
 - MVP hardening: replaced static hardware assumptions with real detection (CPU/RAM/GPU via `systeminformation` plus `node-llama-cpp` runtime GPU/VRAM/backends), and updated model optimization heuristics for `gpuLayers`, `threads`, `batchSize`, and `contextSize`.
