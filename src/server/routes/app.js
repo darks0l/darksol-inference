@@ -2,8 +2,10 @@ import packageJson from "../../../package.json" with { type: "json" };
 
 const APP_NAME = "DARKSOL Inference";
 
-const AVAILABLE_ROUTES = [
+export const AVAILABLE_ROUTES = [
   { method: "GET", path: "/health" },
+  { method: "GET", path: "/web/{filePath}" },
+  { method: "GET", path: "/assets/{filePath}" },
   { method: "GET", path: "/v1/models" },
   { method: "GET", path: "/v1/directory/models" },
   { method: "GET", path: "/v1/bankr/health" },
