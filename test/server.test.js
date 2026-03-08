@@ -29,7 +29,7 @@ async function withTempServer(options, fn) {
 }
 
 before(async () => {
-  server = await startServer({ host: "127.0.0.1", port: 0 });
+  server = await startServer({ host: "127.0.0.1", port: 0, ollamaEnabled: false });
   const address = server.server.address();
   baseUrl = `http://127.0.0.1:${address.port}`;
 });
@@ -56,6 +56,81 @@ test("GET /v1/models returns OpenAI-style model list", async () => {
   assert.equal(response.status, 200);
   assert.equal(body.object, "list");
   assert.ok(Array.isArray(body.data));
+});
+
+test("GET /v1/models includes Ollama local inventory when enabled", async () => {
+  const ollamaFetchImpl = async (url) => {
+    if (String(url).endsWith("/api/tags")) {
+      return {
+        ok: true,
+        async json() {
+          return {
+            models: [
+              {
+                name: "llama3.2:latest",
+                size: 123456789,
+                modified_at: "2026-03-01T00:00:00.000Z",
+                details: { quantization_level: "Q4_K_M", family: "llama", parameter_size: "3B" }
+              }
+            ]
+          };
+        }
+      };
+    }
+    throw new Error(`unexpected url: ${url}`);
+  };
+
+  await withTempServer({ ollamaEnabled: true, ollamaFetchImpl }, async (tempBaseUrl) => {
+    const response = await fetch(`${tempBaseUrl}/v1/models`);
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.ok(body.data.some((item) => item.id === "ollama/llama3.2:latest" && item.provider === "ollama"));
+  });
+});
+
+test("GET /v1/ollama/models returns discovered local Ollama models", async () => {
+  const ollamaFetchImpl = async (url) => {
+    if (String(url).endsWith("/api/tags")) {
+      return {
+        ok: true,
+        async json() {
+          return {
+            models: [
+              {
+                name: "qwen2.5:7b",
+                size: 22334455,
+                modified_at: "2026-03-02T00:00:00.000Z",
+                details: { quantization_level: "Q8_0", family: "qwen", parameter_size: "7B" }
+              }
+            ]
+          };
+        }
+      };
+    }
+    throw new Error(`unexpected url: ${url}`);
+  };
+
+  await withTempServer({ ollamaEnabled: true, ollamaFetchImpl }, async (tempBaseUrl) => {
+    const response = await fetch(`${tempBaseUrl}/v1/ollama/models`);
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(body.object, "list");
+    assert.deepEqual(body.data, [
+      {
+        id: "ollama/qwen2.5:7b",
+        object: "model",
+        owned_by: "ollama",
+        provider: "ollama",
+        created: Math.floor(new Date("2026-03-02T00:00:00.000Z").getTime() / 1000),
+        size: 22334455,
+        quant: "Q8_0",
+        family: "qwen",
+        parameter_size: "7B"
+      }
+    ]);
+  });
 });
 
 test("GET /v1/app/meta returns app bootstrap metadata", async () => {
@@ -149,6 +224,85 @@ test("POST /v1/chat/completions returns error for unknown model", async () => {
   assert.ok(payload.error?.message);
   assert.equal(payload.error.type, "invalid_request_error");
   assert.equal(payload.error.code, "model_not_found");
+});
+
+test("POST /v1/completions can run against ollama/<model> path", async () => {
+  const ollamaFetchImpl = async (url, init) => {
+    if (String(url).endsWith("/api/generate")) {
+      const body = JSON.parse(init.body);
+      assert.equal(body.model, "llama3.2:latest");
+      assert.equal(body.prompt, "hello");
+      return {
+        ok: true,
+        async json() {
+          return { response: "hello from ollama" };
+        }
+      };
+    }
+    throw new Error(`unexpected url: ${url}`);
+  };
+
+  await withTempServer({ ollamaEnabled: true, ollamaFetchImpl }, async (tempBaseUrl) => {
+    const response = await fetch(`${tempBaseUrl}/v1/completions`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        model: "ollama/llama3.2:latest",
+        prompt: "hello"
+      })
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(body.model, "ollama/llama3.2:latest");
+    assert.equal(body.choices?.[0]?.text, "hello from ollama");
+  });
+});
+
+test("POST /v1/completions returns model_not_found for missing Ollama model", async () => {
+  const ollamaFetchImpl = async (url) => {
+    if (String(url).endsWith("/api/generate")) {
+      return {
+        ok: false,
+        status: 404,
+        async json() {
+          return { error: "model 'missing' not found" };
+        }
+      };
+    }
+    throw new Error(`unexpected url: ${url}`);
+  };
+
+  await withTempServer({ ollamaEnabled: true, ollamaFetchImpl }, async (tempBaseUrl) => {
+    const response = await fetch(`${tempBaseUrl}/v1/completions`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        model: "ollama/missing",
+        prompt: "hello"
+      })
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 404);
+    assert.equal(body.error.type, "invalid_request_error");
+    assert.equal(body.error.code, "model_not_found");
+  });
+});
+
+test("GET /v1/ollama/models returns upstream_unreachable style error when Ollama is offline", async () => {
+  const ollamaFetchImpl = async () => {
+    throw new Error("connect ECONNREFUSED");
+  };
+
+  await withTempServer({ ollamaEnabled: true, ollamaFetchImpl }, async (tempBaseUrl) => {
+    const response = await fetch(`${tempBaseUrl}/v1/ollama/models`);
+    const body = await response.json();
+
+    assert.equal(response.status, 502);
+    assert.equal(body.error.type, "api_error");
+    assert.equal(body.error.code, "ollama_unreachable");
+  });
 });
 
 test("GET /v1/directory/models returns normalized model directory items", async () => {

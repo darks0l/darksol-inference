@@ -20,10 +20,16 @@ export function registerServeCommand(program, deps = {}) {
     .option("--host <host>", "host", "127.0.0.1")
     .option("--api-key <key>", "API key")
     .option("--model <name>", "preload model")
+    .option("--ollama-base-url <url>", "Ollama base URL override")
+    .option("--ollama-enabled <state>", "Enable/disable Ollama inventory (true|false)")
     .action(async (options) => {
       const port = Number(options.port);
       const host = options.host;
       const apiKey = options.apiKey;
+      const ollamaBaseUrl = options.ollamaBaseUrl;
+      const ollamaEnabled = options.ollamaEnabled === undefined
+        ? undefined
+        : String(options.ollamaEnabled).toLowerCase() === "true";
 
       const hardware = await detectHardwareFn();
       log(chalk.cyan(`Hardware: ${hardware.cpu.brand} | GPUs: ${hardware.gpus.length} | VRAM: ${hardware.totalVramMb}MB`));
@@ -34,8 +40,20 @@ export function registerServeCommand(program, deps = {}) {
         log(chalk.green(`Preloaded model ${install.metadata.name}`));
       }
 
-      await saveConfigFn({ host, port, apiKey: apiKey || null });
-      await startServerFn({ host, port, apiKey });
+      await saveConfigFn({
+        host,
+        port,
+        apiKey: apiKey || null,
+        ...(ollamaBaseUrl ? { ollamaBaseUrl } : {}),
+        ...(ollamaEnabled === undefined ? {} : { ollamaEnabled })
+      });
+      await startServerFn({
+        host,
+        port,
+        apiKey,
+        ...(ollamaBaseUrl ? { ollamaBaseUrl } : {}),
+        ...(ollamaEnabled === undefined ? {} : { ollamaEnabled })
+      });
       log(chalk.green(`darksol server listening on http://${host}:${port}`));
     });
 }

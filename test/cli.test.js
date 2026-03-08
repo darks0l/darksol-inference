@@ -144,6 +144,21 @@ test("list command renders installed models and load state", async () => {
   const logs = [];
   const cli = createCli({
     list: {
+      loadConfig: async () => ({
+        ollamaEnabled: true,
+        ollamaBaseUrl: "http://127.0.0.1:11434"
+      }),
+      createOllamaClient: () => ({
+        async listLocalModels() {
+          return [
+            {
+              name: "llama3.2:latest",
+              size: 2_048_000_000,
+              quant: "Q4_K_M"
+            }
+          ];
+        }
+      }),
       listInstalledModels: async () => ([
         {
           name: "llama-test",
@@ -174,6 +189,7 @@ test("list command renders installed models and load state", async () => {
   assert.equal(logs.length, 1);
   assert.match(logs[0], /llama-test/);
   assert.match(logs[0], /embed-test/);
+  assert.match(logs[0], /ollama\/llama3.2:latest/);
   assert.match(logs[0], /\s+yes\s+/);
   assert.match(logs[0], /\s+no\s+/);
 });

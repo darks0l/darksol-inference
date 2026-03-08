@@ -18,7 +18,7 @@ export function createCli(deps = {}) {
     .version("0.1.0");
 
   registerServeCommand(program, deps.serve);
-  registerRunCommand(program);
+  registerRunCommand(program, deps.run);
   registerPullCommand(program);
   registerListCommand(program, deps.list);
   registerRmCommand(program);
