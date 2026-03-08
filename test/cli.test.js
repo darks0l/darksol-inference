@@ -7,8 +7,69 @@ test("cli registers expected commands", () => {
   const names = cli.commands.map((cmd) => cmd.name());
   assert.deepEqual(
     names.sort(),
-    ["browse", "info", "list", "ps", "pull", "rm", "run", "search", "serve", "status", "usage"].sort()
+    ["browse", "info", "list", "mcp", "ps", "pull", "rm", "run", "search", "serve", "status", "usage"].sort()
   );
+});
+
+test("mcp list command prints configured servers", async () => {
+  const logs = [];
+  const cli = createCli({
+    mcp: {
+      registry: {
+        async list() {
+          return [{ name: "CoinGecko", enabled: false, endpoint: "https://api.coingecko.com/mcp" }];
+        }
+      },
+      log: (line) => logs.push(line)
+    }
+  });
+
+  await cli.parseAsync(["node", "darksol", "mcp", "list"]);
+
+  assert.deepEqual(logs, ["CoinGecko\tenabled=no\tendpoint=https://api.coingecko.com/mcp"]);
+});
+
+test("mcp enable command toggles configured server", async () => {
+  const calls = [];
+  const logs = [];
+  const cli = createCli({
+    mcp: {
+      registry: {
+        async setEnabled(name, enabled) {
+          calls.push({ name, enabled });
+        }
+      },
+      log: (line) => logs.push(line)
+    }
+  });
+
+  await cli.parseAsync(["node", "darksol", "mcp", "enable", "CoinGecko"]);
+
+  assert.deepEqual(calls, [{ name: "CoinGecko", enabled: true }]);
+  assert.deepEqual(logs, ["Enabled MCP server: CoinGecko"]);
+});
+
+test("mcp disable command sets exit code when server does not exist", async () => {
+  const errors = [];
+  let exitCode;
+  const cli = createCli({
+    mcp: {
+      registry: {
+        async setEnabled() {
+          throw new Error("Unknown MCP server: Missing");
+        }
+      },
+      errorLog: (line) => errors.push(line),
+      setExitCode: (value) => {
+        exitCode = value;
+      }
+    }
+  });
+
+  await cli.parseAsync(["node", "darksol", "mcp", "disable", "Missing"]);
+
+  assert.equal(exitCode, 1);
+  assert.deepEqual(errors, ["Unknown MCP server: Missing"]);
 });
 
 test("search command prints concise directory rows", async () => {
