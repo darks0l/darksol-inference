@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+
+## 0.2.0
 - Added MCP integration foundation: file-backed MCP server registry (`~/.darksol/mcp-servers.json`) with preconfigured CoinGecko/DexScreener/Etherscan/DefiLlama entries, OpenAI tool-schema injection, and MCP tool-call execution loop for chat completions.
 - Added MCP management surfaces: CLI `darksol mcp list|enable|disable` and API routes `GET /v1/mcp/servers`, `POST /v1/mcp/servers/:name/enable`, and `POST /v1/mcp/servers/:name/disable`.
 - Added deterministic tests for MCP registry, tool injection, executor, chat tool-call loop integration, and MCP CLI/API command paths.
@@ -35,6 +37,8 @@
 - Phase 7 reliability baseline: added shared inference queue controls for `/v1/completions` + `/v1/chat/completions` with configurable `inferenceConcurrency` (default `1`).
 - Phase 7 reliability baseline: added provider call timeout/retry wrapper (`providerTimeoutMs` default `15000`, `providerRetryCount` default `1`) and OpenAI-style `provider_timeout` error mapping.
 - Added deterministic integration tests for queue serialization, transient provider retry, and timeout/retry behavior.
+- Added project landing page in `landing/` and deployed to Cloudflare Pages (`darksol-cc`) with app-matching purple/dark design.
+- Updated README to remove internal favicon/web asset implementation notes from npm-facing docs and focus on product usage.
 
 ## 0.1.2
 - README aligned to DARKSOL package treatment used across other repos/pages (banner, badges, footer voice).

@@ -1,7 +1,7 @@
 {
   "name": "darksol",
-  "version": "0.1.2",
-  "description": "Local LLM inference server with cloud gateway fallback, model directory, and hardware-aware optimization",
+  "version": "0.2.0",
+  "description": "Local-first LLM inference engine with OpenAI-compatible API, MCP tools, and hardware-aware optimization",
   "main": "src/cli.js",
   "type": "module",
   "bin": {
@@ -64,5 +64,5 @@
     "type": "git",
     "url": "https://gitlab.com/darks0l/darksol-inference.git"
   },
-  "homepage": "https://darksol.net"
+  "homepage": "https://darksol.cc"
 }
