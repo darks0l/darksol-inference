@@ -1,4 +1,7 @@
 import Fastify from "fastify";
+import fastifyStatic from "@fastify/static";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { createAuthMiddleware } from "./middleware/auth.js";
 import { registerChatRoutes } from "./routes/chat.js";
 import { registerCompletionsRoutes } from "./routes/completions.js";
@@ -10,14 +13,47 @@ import { registerBankrRoutes } from "./routes/bankr.js";
 import { registerAppRoutes } from "./routes/app.js";
 import { logger } from "../lib/logger.js";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const repoRoot = path.resolve(__dirname, "../..");
+
+function isLoopbackAddress(address = "") {
+  return (
+    address === "127.0.0.1" ||
+    address === "::1" ||
+    address === "::ffff:127.0.0.1" ||
+    address.startsWith("127.")
+  );
+}
+
 export async function buildServer({ apiKey, fetchImpl } = {}) {
   const fastify = Fastify({ logger: false });
   const authMiddleware = createAuthMiddleware({ apiKey });
+
+  fastify.addHook("onRequest", async (request, reply) => {
+    if (request.url.startsWith("/web/") || request.url.startsWith("/assets/")) {
+      if (!isLoopbackAddress(request.ip)) {
+        return reply.code(403).send({ error: "Static assets are restricted to local loopback access" });
+      }
+    }
+  });
 
   fastify.addHook("preHandler", async (request, reply) => {
     if (request.url.startsWith("/v1/")) {
       return authMiddleware(request, reply);
     }
+  });
+
+  await fastify.register(fastifyStatic, {
+    root: path.join(repoRoot, "web"),
+    prefix: "/web/",
+    decorateReply: false
+  });
+
+  await fastify.register(fastifyStatic, {
+    root: path.join(repoRoot, "assets"),
+    prefix: "/assets/",
+    decorateReply: false
   });
 
   await registerHealthRoutes(fastify);

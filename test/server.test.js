@@ -73,6 +73,61 @@ test("GET /v1/app/meta returns app bootstrap metadata", async () => {
   assert.equal(body.web.shell, "/web/index.html");
 });
 
+test("GET /web/index.html serves static shell HTML", async () => {
+  const response = await fetch(`${baseUrl}/web/index.html`);
+  const body = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get("content-type") || "", /^text\/html\b/i);
+  assert.match(body, /DARKSOL Dashboard/);
+});
+
+test("GET /assets/icons/favicon-32x32.png serves static icon PNG", async () => {
+  const response = await fetch(`${baseUrl}/assets/icons/favicon-32x32.png`);
+  const body = await response.arrayBuffer();
+
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get("content-type") || "", /^image\/png\b/i);
+  assert.ok(body.byteLength > 0);
+});
+
+test("Static routes reject non-loopback clients", async () => {
+  const tempServer = await buildServer();
+
+  try {
+    const response = await tempServer.inject({
+      method: "GET",
+      url: "/web/index.html",
+      remoteAddress: "203.0.113.10"
+    });
+
+    assert.equal(response.statusCode, 403);
+  } finally {
+    await tempServer.close();
+  }
+});
+
+test("API key middleware enforces /v1/* and keeps /health public", async () => {
+  await withTempServer({ apiKey: "topsecret" }, async (tempBaseUrl) => {
+    const missingKeyResponse = await fetch(`${tempBaseUrl}/v1/models`);
+    const missingKeyBody = await missingKeyResponse.json();
+    assert.equal(missingKeyResponse.status, 401);
+    assert.equal(missingKeyBody.error?.message, "Missing bearer token");
+
+    const invalidKeyResponse = await fetch(`${tempBaseUrl}/v1/models`, {
+      headers: { authorization: "Bearer wrong" }
+    });
+    const invalidKeyBody = await invalidKeyResponse.json();
+    assert.equal(invalidKeyResponse.status, 401);
+    assert.equal(invalidKeyBody.error?.message, "Invalid API key");
+
+    const healthResponse = await fetch(`${tempBaseUrl}/health`);
+    const healthBody = await healthResponse.json();
+    assert.equal(healthResponse.status, 200);
+    assert.equal(healthBody.status, "ok");
+  });
+});
+
 test("POST /v1/chat/completions returns 400 when model is missing", async () => {
   const { response, payload } = await postJson("/v1/chat/completions", {
       messages: [{ role: "user", content: "hi" }]
