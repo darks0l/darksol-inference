@@ -11,7 +11,7 @@
 - Current quality gates pass:
   - `npm run lint`
   - `npm run typecheck`
-  - `npm test` (27 passing)
+  - `npm test` (42 passing)
 
 ## Notable Recent Commits
 
@@ -54,6 +54,8 @@ Completed in this chunk (Bankr scope: LLM Gateway integration only, no onchain t
 
 - Added deterministic CLI integration tests for `pull`, `rm`, `ps`, and `browse` command flows using mocked IO (no network reliance)
 - Tightened provider error-path assertions for `run`, `list`, and `status` (invalid model/provider and offline states)
+- Added provider-router hardening in API inference routes: unprefixed model requests now prefer local DARKSOL models, then fall back to Ollama when the local model is not installed and Ollama is enabled
+- Added deterministic API tests for local-miss fallback behavior across both `/v1/completions` and `/v1/chat/completions`
 - Updated README and roadmap notes to reflect the exact chunk scope and outputs
 
 Remaining Phase 7 work continues from the plan sections above.

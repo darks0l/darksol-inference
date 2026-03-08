@@ -102,6 +102,7 @@ Default base URL: `http://127.0.0.1:11435`
 - `GET /v1/app/meta` - app shell bootstrap metadata (name/version/routes + branding asset paths).
 - `POST /v1/chat/completions` - OpenAI-compatible chat completions.
 - `POST /v1/completions` - OpenAI-compatible text completions.
+  - Provider policy: explicit `ollama/<model>` ids always use Ollama; unprefixed model ids prefer local DARKSOL models and fall back to Ollama only when the local model is not installed and Ollama is enabled.
 - `POST /v1/embeddings` - OpenAI-compatible embeddings.
 
 API contract:

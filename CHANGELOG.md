@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+- Phase 7 hardening: API provider routing now prefers local DARKSOL models for unprefixed model ids and automatically falls back to Ollama when local model is missing and Ollama is enabled.
+- Added deterministic server integration tests for unprefixed local-miss fallback behavior in `/v1/completions` and `/v1/chat/completions`.
+
 ## 0.1.2
 - README aligned to DARKSOL package treatment used across other repos/pages (banner, badges, footer voice).
 - Added `assets/darksol-banner.png` for consistent brand presentation.

@@ -2,7 +2,61 @@ import crypto from "node:crypto";
 import { textCompletion } from "../../engine/inference.js";
 import { modelPool } from "../../engine/pool.js";
 import { createOllamaClient, isOllamaModelId, toOllamaModelName } from "../../providers/ollama.js";
-import { handleRouteError, openAIError } from "./errors.js";
+import { handleRouteError, isModelNotInstalledError, openAIError } from "./errors.js";
+
+async function respondFromOllama({ reply, client, model, prompt, stream }) {
+  const ollamaModel = isOllamaModelId(model) ? toOllamaModelName(model) : model;
+  const apiModelId = isOllamaModelId(model) ? model : `ollama/${model}`;
+  const id = `cmpl-${crypto.randomUUID()}`;
+  const created = Math.floor(Date.now() / 1000);
+
+  if (stream) {
+    reply.raw.writeHead(200, {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive"
+    });
+
+    await client.generate({
+      model: ollamaModel,
+      prompt,
+      stream: true,
+      onTextChunk: (chunk) => {
+        const payload = {
+          id,
+          object: "text_completion",
+          created,
+          model: apiModelId,
+          choices: [{ index: 0, text: chunk, finish_reason: null }]
+        };
+        reply.raw.write(`data: ${JSON.stringify(payload)}\n\n`);
+      }
+    });
+
+    reply.raw.write("data: [DONE]\n\n");
+    reply.raw.end();
+    return reply;
+  }
+
+  const text = await client.generate({
+    model: ollamaModel,
+    prompt,
+    stream: false
+  });
+
+  return {
+    id,
+    object: "text_completion",
+    created,
+    model: apiModelId,
+    choices: [{ index: 0, text, finish_reason: "stop" }],
+    usage: {
+      prompt_tokens: 0,
+      completion_tokens: 0,
+      total_tokens: 0
+    }
+  };
+}
 
 export async function registerCompletionsRoutes(fastify, { ollamaClient } = {}) {
   const client = ollamaClient || createOllamaClient();
@@ -20,59 +74,19 @@ export async function registerCompletionsRoutes(fastify, { ollamaClient } = {}) 
 
     try {
       if (isOllamaModelId(model)) {
-        const ollamaModel = toOllamaModelName(model);
-        const id = `cmpl-${crypto.randomUUID()}`;
-        const created = Math.floor(Date.now() / 1000);
-
-        if (stream) {
-          reply.raw.writeHead(200, {
-            "Content-Type": "text/event-stream",
-            "Cache-Control": "no-cache",
-            Connection: "keep-alive"
-          });
-
-          await client.generate({
-            model: ollamaModel,
-            prompt,
-            stream: true,
-            onTextChunk: (chunk) => {
-              const payload = {
-                id,
-                object: "text_completion",
-                created,
-                model,
-                choices: [{ index: 0, text: chunk, finish_reason: null }]
-              };
-              reply.raw.write(`data: ${JSON.stringify(payload)}\n\n`);
-            }
-          });
-
-          reply.raw.write("data: [DONE]\n\n");
-          reply.raw.end();
-          return reply;
-        }
-
-        const text = await client.generate({
-          model: ollamaModel,
-          prompt,
-          stream: false
-        });
-
-        return {
-          id,
-          object: "text_completion",
-          created,
-          model,
-          choices: [{ index: 0, text, finish_reason: "stop" }],
-          usage: {
-            prompt_tokens: 0,
-            completion_tokens: 0,
-            total_tokens: 0
-          }
-        };
+        return await respondFromOllama({ reply, client, model, prompt, stream });
       }
 
-      const poolItem = await modelPool.load(model);
+      let poolItem;
+      try {
+        poolItem = await modelPool.load(model);
+      } catch (error) {
+        if (client.enabled && isModelNotInstalledError(error)) {
+          return await respondFromOllama({ reply, client, model, prompt, stream });
+        }
+        throw error;
+      }
+
       const id = `cmpl-${crypto.randomUUID()}`;
       const created = Math.floor(Date.now() / 1000);
 

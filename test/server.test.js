@@ -259,6 +259,72 @@ test("POST /v1/completions can run against ollama/<model> path", async () => {
   });
 });
 
+test("POST /v1/completions falls back to ollama for unprefixed missing local models", async () => {
+  const ollamaFetchImpl = async (url, init) => {
+    if (String(url).endsWith("/api/generate")) {
+      const body = JSON.parse(init.body);
+      assert.equal(body.model, "llama3.2:latest");
+      assert.equal(body.prompt, "hello");
+      return {
+        ok: true,
+        async json() {
+          return { response: "fallback completion" };
+        }
+      };
+    }
+    throw new Error(`unexpected url: ${url}`);
+  };
+
+  await withTempServer({ ollamaEnabled: true, ollamaFetchImpl }, async (tempBaseUrl) => {
+    const response = await fetch(`${tempBaseUrl}/v1/completions`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        model: "llama3.2:latest",
+        prompt: "hello"
+      })
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(body.model, "ollama/llama3.2:latest");
+    assert.equal(body.choices?.[0]?.text, "fallback completion");
+  });
+});
+
+test("POST /v1/chat/completions falls back to ollama for unprefixed missing local models", async () => {
+  const ollamaFetchImpl = async (url, init) => {
+    if (String(url).endsWith("/api/chat")) {
+      const body = JSON.parse(init.body);
+      assert.equal(body.model, "llama3.2:latest");
+      assert.equal(body.messages?.[0]?.content, "hello");
+      return {
+        ok: true,
+        async json() {
+          return { message: { content: "fallback chat" } };
+        }
+      };
+    }
+    throw new Error(`unexpected url: ${url}`);
+  };
+
+  await withTempServer({ ollamaEnabled: true, ollamaFetchImpl }, async (tempBaseUrl) => {
+    const response = await fetch(`${tempBaseUrl}/v1/chat/completions`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        model: "llama3.2:latest",
+        messages: [{ role: "user", content: "hello" }]
+      })
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(body.model, "ollama/llama3.2:latest");
+    assert.equal(body.choices?.[0]?.message?.content, "fallback chat");
+  });
+});
+
 test("POST /v1/completions returns model_not_found for missing Ollama model", async () => {
   const ollamaFetchImpl = async (url) => {
     if (String(url).endsWith("/api/generate")) {
