@@ -17,6 +17,16 @@ export async function registerChatRoutes(fastify) {
       return openAIError(reply, 400, "model is required", "invalid_request_error", "model_required");
     }
 
+    if (!Array.isArray(messages) || messages.length === 0) {
+      return openAIError(
+        reply,
+        400,
+        "messages must be a non-empty array",
+        "invalid_request_error",
+        "invalid_messages"
+      );
+    }
+
     try {
       const poolItem = await modelPool.load(model);
       const id = `chatcmpl-${crypto.randomUUID()}`;

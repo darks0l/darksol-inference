@@ -10,6 +10,10 @@ export async function registerEmbeddingsRoutes(fastify) {
       return openAIError(reply, 400, "model is required", "invalid_request_error", "model_required");
     }
 
+    if (input === undefined || input === null) {
+      return openAIError(reply, 400, "input is required", "invalid_request_error", "input_required");
+    }
+
     if (typeof input !== "string") {
       return openAIError(reply, 400, "input must be a string", "invalid_request_error", "invalid_input");
     }

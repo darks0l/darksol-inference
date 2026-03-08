@@ -11,6 +11,10 @@ export async function registerCompletionsRoutes(fastify) {
       return openAIError(reply, 400, "model is required", "invalid_request_error", "model_required");
     }
 
+    if (typeof prompt !== "string") {
+      return openAIError(reply, 400, "prompt must be a string", "invalid_request_error", "invalid_prompt");
+    }
+
     try {
       const poolItem = await modelPool.load(model);
       const id = `cmpl-${crypto.randomUUID()}`;

@@ -3,13 +3,26 @@ export function openAIError(reply, status, message, type, code) {
     error: {
       message,
       type,
+      param: null,
       code
     }
   });
 }
 
 export function handleRouteError(reply, error, model) {
-  if (error?.message?.startsWith("Model not installed:")) {
+  const message = String(error?.message || "");
+
+  if (message.startsWith("Model not installed:")) {
+    return openAIError(
+      reply,
+      404,
+      `The model '${model}' does not exist or is not installed.`,
+      "invalid_request_error",
+      "model_not_found"
+    );
+  }
+
+  if (message.toLowerCase().includes("not found") && model) {
     return openAIError(
       reply,
       404,
