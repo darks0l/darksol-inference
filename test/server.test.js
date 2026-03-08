@@ -15,6 +15,18 @@ function createDeferred() {
   return { promise, resolve, reject };
 }
 
+function createJsonLineStream(items) {
+  const encoder = new TextEncoder();
+  return new ReadableStream({
+    start(controller) {
+      for (const item of items) {
+        controller.enqueue(encoder.encode(`${JSON.stringify(item)}\n`));
+      }
+      controller.close();
+    }
+  });
+}
+
 async function postJson(path, body) {
   const response = await fetch(`${baseUrl}${path}`, {
     method: "POST",
@@ -57,6 +69,17 @@ test("GET /health returns service health", async () => {
   assert.equal(response.status, 200);
   assert.equal(body.status, "ok");
   assert.equal(body.service, "darksol-inference");
+});
+
+test("GET /health/runtime returns runtime health with loaded model inventory", async () => {
+  const response = await fetch(`${baseUrl}/health/runtime`);
+  const body = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(body.status, "ok");
+  assert.equal(body.service, "darksol-inference");
+  assert.ok(Array.isArray(body.loadedModels));
+  assert.ok(body.hardware?.cpu?.brand);
 });
 
 test("GET /v1/models returns OpenAI-style model list", async () => {
@@ -338,6 +361,80 @@ test("POST /v1/chat/completions falls back to ollama for unprefixed missing loca
     assert.equal(response.status, 200);
     assert.equal(body.model, "ollama/llama3.2:latest");
     assert.equal(body.choices?.[0]?.message?.content, "fallback chat");
+  });
+});
+
+test("POST /v1/chat/completions streams SSE chunks for Ollama chat", async () => {
+  const ollamaFetchImpl = async (url, init) => {
+    if (String(url).endsWith("/api/chat")) {
+      const body = JSON.parse(init.body);
+      assert.equal(body.stream, true);
+      return {
+        ok: true,
+        body: createJsonLineStream([
+          { message: { content: "Hello" } },
+          { message: { content: " world" } }
+        ])
+      };
+    }
+    throw new Error(`unexpected url: ${url}`);
+  };
+
+  await withTempServer({ ollamaEnabled: true, ollamaFetchImpl }, async (tempBaseUrl) => {
+    const response = await fetch(`${tempBaseUrl}/v1/chat/completions`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        model: "ollama/llama3.2:latest",
+        stream: true,
+        messages: [{ role: "user", content: "hello" }]
+      })
+    });
+    const body = await response.text();
+
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get("content-type") || "", /^text\/event-stream\b/i);
+    assert.match(body, /"object":"chat\.completion\.chunk"/);
+    assert.match(body, /"content":"Hello"/);
+    assert.match(body, /"content":" world"/);
+    assert.match(body, /\[DONE]/);
+  });
+});
+
+test("POST /v1/completions streams SSE chunks for Ollama completion", async () => {
+  const ollamaFetchImpl = async (url, init) => {
+    if (String(url).endsWith("/api/generate")) {
+      const body = JSON.parse(init.body);
+      assert.equal(body.stream, true);
+      return {
+        ok: true,
+        body: createJsonLineStream([
+          { response: "alpha" },
+          { response: " beta" }
+        ])
+      };
+    }
+    throw new Error(`unexpected url: ${url}`);
+  };
+
+  await withTempServer({ ollamaEnabled: true, ollamaFetchImpl }, async (tempBaseUrl) => {
+    const response = await fetch(`${tempBaseUrl}/v1/completions`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        model: "ollama/llama3.2:latest",
+        stream: true,
+        prompt: "hello"
+      })
+    });
+    const body = await response.text();
+
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get("content-type") || "", /^text\/event-stream\b/i);
+    assert.match(body, /"object":"text_completion"/);
+    assert.match(body, /"text":"alpha"/);
+    assert.match(body, /"text":" beta"/);
+    assert.match(body, /\[DONE]/);
   });
 });
 

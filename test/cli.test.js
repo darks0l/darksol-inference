@@ -240,7 +240,7 @@ test("status command reports online server, hardware, and loaded models", async 
 
   await cli.parseAsync(["node", "darksol", "status"]);
 
-  assert.deepEqual(fetchCalls, ["http://127.0.0.1:11435/health"]);
+  assert.deepEqual(fetchCalls, ["http://127.0.0.1:11435/health/runtime"]);
   assert.ok(logs.some((line) => line.includes("Server: online")));
   assert.ok(logs.some((line) => line.includes("CPU: Test CPU")));
   assert.ok(logs.some((line) => line.includes("Loaded Models: 1")));
@@ -521,6 +521,51 @@ test("ps command renders loaded model table deterministically", async () => {
 
   assert.deepEqual(rows, [["llama-test", "1024B", "Q4_K_M", 24, 8, "2026-03-08T00:00:00.000Z"]]);
   assert.deepEqual(logs, ["rows=1"]);
+});
+
+test("ps command prefers loaded models from running server runtime endpoint", async () => {
+  const rows = [];
+  const cli = createCli({
+    ps: {
+      loadConfig: async () => ({ host: "127.0.0.1", port: 11435 }),
+      fetchImpl: async () => ({
+        ok: true,
+        async json() {
+          return {
+            loadedModels: [
+              {
+                name: "remote-loaded",
+                size: 2048,
+                quant: "Q4_K_M",
+                gpuLayers: 32,
+                threads: 10,
+                lastUsed: "2026-03-08T00:00:00.000Z"
+              }
+            ]
+          };
+        }
+      }),
+      modelPool: {
+        listLoaded() {
+          return [];
+        }
+      },
+      createTable: () => ({
+        push(row) {
+          rows.push(row);
+        },
+        toString() {
+          return "rows=1";
+        }
+      }),
+      formatBytes: (value) => `${value}B`,
+      log() {}
+    }
+  });
+
+  await cli.parseAsync(["node", "darksol", "ps"]);
+
+  assert.deepEqual(rows, [["remote-loaded", "2048B", "Q4_K_M", 32, 10, "2026-03-08T00:00:00.000Z"]]);
 });
 
 test("browse command renders rows and supports deterministic --pull flow", async () => {

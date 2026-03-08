@@ -1,9 +1,28 @@
 import Table from "cli-table3";
 import { modelPool } from "../engine/pool.js";
 import { formatBytes } from "./utils.js";
+import { loadConfig } from "../lib/config.js";
+
+async function fetchLoadedModels(host, port, fetchImpl) {
+  try {
+    const response = await fetchImpl(`http://${host}:${port}/health/runtime`);
+    if (!response.ok) {
+      return null;
+    }
+    const payload = await response.json();
+    if (!Array.isArray(payload?.loadedModels)) {
+      return null;
+    }
+    return payload.loadedModels;
+  } catch {
+    return null;
+  }
+}
 
 export function registerPsCommand(program, deps = {}) {
   const modelPoolApi = deps.modelPool || modelPool;
+  const loadConfigFn = deps.loadConfig || loadConfig;
+  const fetchImpl = deps.fetchImpl || fetch;
   const createTable = deps.createTable || ((options) => new Table(options));
   const formatBytesFn = deps.formatBytes || formatBytes;
   const log = deps.log || console.log;
@@ -11,8 +30,10 @@ export function registerPsCommand(program, deps = {}) {
   program
     .command("ps")
     .description("Show loaded models")
-    .action(() => {
-      const loaded = modelPoolApi.listLoaded();
+    .action(async () => {
+      const config = await loadConfigFn();
+      const remoteLoaded = await fetchLoadedModels(config.host, config.port, fetchImpl);
+      const loaded = remoteLoaded || modelPoolApi.listLoaded();
       if (loaded.length === 0) {
         log("No models loaded.");
         return;

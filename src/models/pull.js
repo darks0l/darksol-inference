@@ -1,11 +1,20 @@
 import fs from "node:fs";
 import fsPromises from "node:fs/promises";
-import { Readable } from "node:stream";
+import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { modelDir, modelFilePath, modelMetadataPath } from "../lib/paths.js";
 
+function createRequestHeaders() {
+  const headers = { "User-Agent": "darksol/0.1.0" };
+  const token = process.env.HUGGINGFACE_TOKEN || process.env.HF_TOKEN;
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  return headers;
+}
+
 async function fetchJson(url) {
-  const response = await fetch(url, { headers: { "User-Agent": "darksol/0.1.0" } });
+  const response = await fetch(url, { headers: createRequestHeaders() });
   if (!response.ok) {
     throw new Error(`Request failed (${response.status}) for ${url}`);
   }
@@ -43,7 +52,7 @@ export async function downloadModel({ spec, onProgress }) {
 
   const fileName = await resolveGgufFile(spec.repo, spec.fileHint);
   const url = `https://huggingface.co/${spec.repo}/resolve/main/${fileName}?download=true`;
-  const response = await fetch(url, { headers: { "User-Agent": "darksol/0.1.0" } });
+  const response = await fetch(url, { headers: createRequestHeaders() });
 
   if (!response.ok || !response.body) {
     throw new Error(`Failed to download model (${response.status})`);
@@ -51,25 +60,35 @@ export async function downloadModel({ spec, onProgress }) {
 
   const total = Number(response.headers.get("content-length") || 0);
   const destination = modelFilePath(spec.localName);
-  const writeStream = fs.createWriteStream(destination);
+  const partialDestination = `${destination}.partial`;
+  const writeStream = fs.createWriteStream(partialDestination);
 
   let downloaded = 0;
   const start = Date.now();
+  if (onProgress) {
+    onProgress({ downloaded: 0, total, speed: 0, eta: null });
+  }
 
-  const progressStream = new TransformStream({
-    transform(chunk, controller) {
-      downloaded += chunk.length;
+  const progressTransform = new Transform({
+    transform(chunk, _encoding, callback) {
+      downloaded += chunk.byteLength;
       const elapsed = Math.max((Date.now() - start) / 1000, 0.001);
       const speed = downloaded / elapsed;
       const eta = total > 0 ? (total - downloaded) / Math.max(speed, 1) : null;
       if (onProgress) {
         onProgress({ downloaded, total, speed, eta });
       }
-      controller.enqueue(chunk);
+      callback(null, chunk);
     }
   });
 
-  await pipeline(Readable.fromWeb(response.body.pipeThrough(progressStream)), writeStream);
+  try {
+    await pipeline(Readable.fromWeb(response.body), progressTransform, writeStream);
+    await fsPromises.rename(partialDestination, destination);
+  } catch (error) {
+    await fsPromises.rm(partialDestination, { force: true });
+    throw error;
+  }
 
   const metadata = {
     name: spec.localName,

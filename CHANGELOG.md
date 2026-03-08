@@ -1,6 +1,11 @@
 # Changelog
 
 ## Unreleased
+- MVP hardening: wired robust SSE token streaming for `/v1/chat/completions` and `/v1/completions` with local `node-llama-cpp` streaming iterators, Ollama stream passthrough, and client-disconnect abort handling.
+- MVP hardening: upgraded HuggingFace model pull path to real streamed GGUF downloads with auth-token headers (`HUGGINGFACE_TOKEN`/`HF_TOKEN`), temp-file safety, cleanup-on-failure, and progress callback updates.
+- MVP hardening: replaced static hardware assumptions with real detection (CPU/RAM/GPU via `systeminformation` plus `node-llama-cpp` runtime GPU/VRAM/backends), and updated model optimization heuristics for `gpuLayers`, `threads`, `batchSize`, and `contextSize`.
+- MVP hardening: added server runtime health route (`GET /health/runtime`) and wired `darksol ps`/`darksol status` to report live loaded models and runtime hardware from the running server (with local fallback).
+- Added deterministic tests for SSE streaming responses and runtime-backed `ps` behavior.
 - Workstream 2: added local-only Ollama model discovery in `src/providers/ollama-local.js` by scanning manifests/blobs under `~/.ollama/models` (`%USERPROFILE%\\.ollama\\models` on Windows).
 - Workstream 2: updated `darksol list` to show locally installed Ollama models without requiring the Ollama daemon.
 - Workstream 2: updated `darksol run ollama/<model>` to resolve and load GGUF files directly from local Ollama storage via native inference path.
