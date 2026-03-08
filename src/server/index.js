@@ -40,7 +40,10 @@ export async function buildServer({
   providerRetryCount,
   requestQueue,
   providerInvoker,
-  timers
+  timers,
+  detectHardwareFn,
+  readUsageStatsFn,
+  recordInferenceUsageFn
 } = {}) {
   const runtimeConfig = await loadConfig();
   const resolvedOllamaEnabled = ollamaEnabled ?? runtimeConfig.ollamaEnabled;
@@ -93,18 +96,20 @@ export async function buildServer({
 
   await registerHealthRoutes(fastify);
   await registerModelsRoutes(fastify, { ollamaClient });
-  await registerDirectoryRoutes(fastify, { fetchImpl });
+  await registerDirectoryRoutes(fastify, { fetchImpl, detectHardwareFn });
   await registerBankrRoutes(fastify);
-  await registerAppRoutes(fastify);
+  await registerAppRoutes(fastify, { readUsageStats: readUsageStatsFn });
   await registerChatRoutes(fastify, {
     ollamaClient,
     requestQueue: sharedRequestQueue,
-    providerInvoker: sharedProviderInvoker
+    providerInvoker: sharedProviderInvoker,
+    recordInferenceUsageFn
   });
   await registerCompletionsRoutes(fastify, {
     ollamaClient,
     requestQueue: sharedRequestQueue,
-    providerInvoker: sharedProviderInvoker
+    providerInvoker: sharedProviderInvoker,
+    recordInferenceUsageFn
   });
   await registerEmbeddingsRoutes(fastify);
 
@@ -124,7 +129,10 @@ export async function startServer({
   providerRetryCount,
   requestQueue,
   providerInvoker,
-  timers
+  timers,
+  detectHardwareFn,
+  readUsageStatsFn,
+  recordInferenceUsageFn
 } = {}) {
   const server = await buildServer({
     apiKey,
@@ -137,7 +145,10 @@ export async function startServer({
     providerRetryCount,
     requestQueue,
     providerInvoker,
-    timers
+    timers,
+    detectHardwareFn,
+    readUsageStatsFn,
+    recordInferenceUsageFn
   });
   await server.listen({ host, port });
   await logger.info("server_started", { host, port });

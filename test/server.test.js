@@ -186,6 +186,30 @@ test("GET /v1/app/meta returns app bootstrap metadata", async () => {
   assert.equal(body.desktop.packaging.macos, "desktop/config/packaging.mac.json");
 });
 
+test("GET /v1/app/usage returns accumulated usage totals", async () => {
+  await withTempServer(
+    {
+      readUsageStatsFn: async () => ({
+        total_runs: 7,
+        total_tokens_in: 111,
+        total_tokens_out: 222,
+        total_tokens: 333,
+        total_cost: 0
+      })
+    },
+    async (tempBaseUrl) => {
+      const response = await fetch(`${tempBaseUrl}/v1/app/usage`);
+      const body = await response.json();
+
+      assert.equal(response.status, 200);
+      assert.equal(body.object, "usage");
+      assert.equal(body.total_runs, 7);
+      assert.equal(body.total_tokens, 333);
+      assert.equal(body.total_cost, 0);
+    }
+  );
+});
+
 test("GET /web/index.html serves static shell HTML", async () => {
   const response = await fetch(`${baseUrl}/web/index.html`);
   const body = await response.text();
@@ -296,6 +320,50 @@ test("POST /v1/completions can run against ollama/<model> path", async () => {
     assert.equal(body.model, "ollama/llama3.2:latest");
     assert.equal(body.choices?.[0]?.text, "hello from ollama");
   });
+});
+
+test("POST /v1/completions records usage for each completion", async () => {
+  const usageEvents = [];
+  const ollamaFetchImpl = async (url) => {
+    if (String(url).endsWith("/api/generate")) {
+      return {
+        ok: true,
+        async json() {
+          return { response: "tracked output" };
+        }
+      };
+    }
+    throw new Error(`unexpected url: ${url}`);
+  };
+
+  await withTempServer(
+    {
+      ollamaEnabled: true,
+      ollamaFetchImpl,
+      recordInferenceUsageFn: async (usage) => {
+        usageEvents.push(usage);
+      }
+    },
+    async (tempBaseUrl) => {
+      const response = await fetch(`${tempBaseUrl}/v1/completions`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          model: "ollama/llama3.2:latest",
+          prompt: "hello world"
+        })
+      });
+      const body = await response.json();
+
+      assert.equal(response.status, 200);
+      assert.equal(body.usage.prompt_tokens, 3);
+      assert.equal(body.usage.completion_tokens, 4);
+      assert.equal(usageEvents.length, 1);
+      assert.equal(usageEvents[0].provider, "ollama");
+      assert.equal(usageEvents[0].tokensIn, 3);
+      assert.equal(usageEvents[0].tokensOut, 4);
+    }
+  );
 });
 
 test("POST /v1/completions falls back to ollama for unprefixed missing local models", async () => {
@@ -701,6 +769,63 @@ test("GET /v1/directory/models returns OpenAI-style error when upstream fails", 
     assert.equal(body.error.code, "upstream_unreachable");
     assert.ok(body.error.message);
   });
+});
+
+test("GET /v1/directory/models supports sort=popular and hardware-aware filtering", async () => {
+  const fetchImpl = async (url) => {
+    const query = new URL(String(url)).searchParams;
+    assert.equal(query.get("sort"), "downloads");
+    assert.equal(query.get("direction"), "-1");
+    return {
+      ok: true,
+      async json() {
+        return [
+          {
+            id: "small/model",
+            downloads: 10,
+            likes: 2,
+            pipeline_tag: "text-generation",
+            library_name: "llama.cpp",
+            lastModified: "2026-03-01T00:00:00.000Z",
+            siblings: [{ rfilename: "small.gguf", size: 1 * 1024 ** 3 }]
+          },
+          {
+            id: "huge/model",
+            downloads: 9,
+            likes: 1,
+            pipeline_tag: "text-generation",
+            library_name: "llama.cpp",
+            lastModified: "2026-03-01T00:00:00.000Z",
+            siblings: [{ rfilename: "huge.gguf", size: 120 * 1024 ** 3 }]
+          }
+        ];
+      }
+    };
+  };
+
+  await withTempServer(
+    {
+      fetchImpl,
+      detectHardwareFn: async () => ({
+        memory: { free: 16 * 1024 ** 3, total: 32 * 1024 ** 3 },
+        freeVramMb: 0,
+        totalVramMb: 0
+      })
+    },
+    async (tempBaseUrl) => {
+      const response = await fetch(
+        `${tempBaseUrl}/v1/directory/models?q=gguf&sort=popular&hardware_aware=true&fit=recommended`
+      );
+      const body = await response.json();
+
+      assert.equal(response.status, 200);
+      assert.equal(body.object, "list");
+      assert.equal(body.items.length, 1);
+      assert.equal(body.items[0].id, "small/model");
+      assert.equal(body.items[0].compatibility?.indicator, "will_fit");
+      assert.equal(body.items[0].compatibility?.label, "will fit");
+    }
+  );
 });
 
 test("GET /v1/bankr/health returns non-secret gateway config status", async () => {

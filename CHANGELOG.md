@@ -1,6 +1,10 @@
 # Changelog
 
 ## Unreleased
+- MVP hardening: upgraded `darksol pull <model>` HuggingFace path with explicit model/file resolution via HF API metadata, disk-space preflight checks, improved error mapping (`model_not_found`, auth/network failures, insufficient storage), and safer partial-file cleanup semantics.
+- MVP hardening: added persistent local usage/cost tracking in `src/lib/cost-tracker.js`, wired completion/chat usage logging (including streaming flows), exposed `GET /v1/app/usage`, and added CLI `darksol usage`.
+- MVP hardening: enhanced HuggingFace search/directory recommendations with sort options (`trending|popular|downloads|recent|likes`), optional hardware-aware fit filtering (`recommended|will_fit|might_fit|any`), and compatibility indicators (`will fit`, `might fit`, `won't fit`).
+- Added deterministic test coverage for pull download/error handling, usage tracking/stat formatting, completion usage logging, and hardware-aware directory filtering; updated OpenAPI contract/docs for new query parameters and `/v1/app/usage`.
 - MVP hardening: wired real embeddings execution path through `node-llama-cpp` embedding contexts (`src/engine/embeddings.js`) and upgraded `/v1/embeddings` to support both string and string-array inputs with deterministic embedding list responses.
 - MVP hardening: expanded `darksol info <model>` to surface richer metadata across both darksol-installed models and Ollama local discovery, including GGUF path, size, quantization, family, and parameter size when available.
 - MVP hardening: upgraded `darksol browse` with optional interactive pull selection (TTY-aware) while preserving explicit `--pull` index flow and real download installation behavior.

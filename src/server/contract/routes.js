@@ -100,6 +100,32 @@ export const ROUTE_CONTRACT = [
         schema: {
           type: "string"
         }
+      },
+      {
+        name: "sort",
+        in: "query",
+        required: false,
+        schema: {
+          type: "string",
+          enum: ["trending", "popular", "downloads", "recent", "likes"]
+        }
+      },
+      {
+        name: "hardware_aware",
+        in: "query",
+        required: false,
+        schema: {
+          type: "boolean"
+        }
+      },
+      {
+        name: "fit",
+        in: "query",
+        required: false,
+        schema: {
+          type: "string",
+          enum: ["recommended", "will_fit", "might_fit", "any"]
+        }
       }
     ],
     responses: {
@@ -126,6 +152,16 @@ export const ROUTE_CONTRACT = [
     auth: "bearer",
     responses: {
       200: "Metadata payload",
+      401: "Missing or invalid API key"
+    }
+  },
+  {
+    method: "GET",
+    path: "/v1/app/usage",
+    summary: "Local inference usage and cost totals",
+    auth: "bearer",
+    responses: {
+      200: "Usage payload",
       401: "Missing or invalid API key"
     }
   },

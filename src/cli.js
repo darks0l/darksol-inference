@@ -9,6 +9,7 @@ import { registerInfoCommand } from "./commands/info.js";
 import { registerBrowseCommand } from "./commands/browse.js";
 import { registerStatusCommand } from "./commands/status.js";
 import { registerSearchCommand } from "./commands/search.js";
+import { registerUsageCommand } from "./commands/usage.js";
 
 export function createCli(deps = {}) {
   const program = new Command();
@@ -26,7 +27,8 @@ export function createCli(deps = {}) {
   registerInfoCommand(program, deps.info);
   registerBrowseCommand(program, deps.browse);
   registerStatusCommand(program, deps.status);
-  registerSearchCommand(program);
+  registerSearchCommand(program, deps.search);
+  registerUsageCommand(program, deps.usage);
 
   return program;
 }

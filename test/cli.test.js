@@ -7,42 +7,102 @@ test("cli registers expected commands", () => {
   const names = cli.commands.map((cmd) => cmd.name());
   assert.deepEqual(
     names.sort(),
-    ["browse", "info", "list", "ps", "pull", "rm", "run", "search", "serve", "status"].sort()
+    ["browse", "info", "list", "ps", "pull", "rm", "run", "search", "serve", "status", "usage"].sort()
   );
 });
 
 test("search command prints concise directory rows", async () => {
-  const cli = createCli();
   const logs = [];
-  const priorFetch = global.fetch;
-  const priorLog = console.log;
-
-  global.fetch = async () => ({
-    ok: true,
-    async json() {
-      return [
-        {
-          id: "meta-llama/Llama-3.2-3B-Instruct",
-          downloads: 123456,
-          likes: 420,
-          pipeline_tag: "text-generation",
-          library_name: "transformers",
-          lastModified: "2025-02-01T00:00:00.000Z"
+  const cli = createCli({
+    search: {
+      createHfDirectoryClient: () => ({
+        async searchModels() {
+          return [
+            {
+              id: "meta-llama/Llama-3.2-3B-Instruct",
+              downloads: 123456,
+              likes: 420,
+              pipeline_tag: "text-generation"
+            }
+          ];
         }
-      ];
+      }),
+      log: (line) => logs.push(line)
     }
   });
-  console.log = (line) => logs.push(line);
 
-  try {
-    await cli.parseAsync(["node", "darksol", "search", "llama", "--limit", "1", "--task", "text-generation"]);
-  } finally {
-    global.fetch = priorFetch;
-    console.log = priorLog;
-  }
+  await cli.parseAsync(["node", "darksol", "search", "llama", "--limit", "1", "--task", "text-generation"]);
 
   assert.equal(logs.length, 1);
-  assert.match(logs[0], /^meta-llama\/Llama-3.2-3B-Instruct\tdownloads=123456\tlikes=420\ttask=text-generation$/);
+  assert.match(logs[0], /^meta-llama\/Llama-3.2-3B-Instruct\tdownloads=123456\tlikes=420\ttask=text-generation\tcompat=-$/);
+});
+
+test("search command supports hardware-aware compatibility output", async () => {
+  const logs = [];
+  const cli = createCli({
+    search: {
+      detectHardware: async () => ({
+        memory: { free: 12 * 1024 ** 3, total: 16 * 1024 ** 3 },
+        freeVramMb: 4096,
+        totalVramMb: 8192
+      }),
+      createHfDirectoryClient: () => ({
+        async searchModels({ hardware, sort }) {
+          assert.equal(sort, "popular");
+          assert.equal(hardware.fitFilter, "recommended");
+          return [
+            {
+              id: "TheBloke/Llama-2-7B-GGUF",
+              downloads: 1000,
+              likes: 200,
+              pipeline_tag: "text-generation",
+              compatibility: { label: "will fit" }
+            }
+          ];
+        }
+      }),
+      log: (line) => logs.push(line)
+    }
+  });
+
+  await cli.parseAsync([
+    "node",
+    "darksol",
+    "search",
+    "llama",
+    "--sort",
+    "popular",
+    "--hardware-aware"
+  ]);
+
+  assert.equal(logs.length, 1);
+  assert.match(logs[0], /compat=will fit$/);
+});
+
+test("usage command prints accumulated usage stats", async () => {
+  const logs = [];
+  const cli = createCli({
+    usage: {
+      readUsageStats: async () => ({
+        total_runs: 5,
+        total_tokens_in: 120,
+        total_tokens_out: 80,
+        total_tokens: 200,
+        total_cost: 0
+      }),
+      log: (line) => logs.push(line)
+    }
+  });
+
+  await cli.parseAsync(["node", "darksol", "usage"]);
+
+  assert.deepEqual(logs, [
+    "Runs: 5",
+    "Tokens in: 120",
+    "Tokens out: 80",
+    "Tokens total: 200",
+    "Cost total: 0.00"
+  ]);
 });
 
 test("run command supports one-shot prompt for local models", async () => {

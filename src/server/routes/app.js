@@ -1,9 +1,12 @@
 import packageJson from "../../../package.json" with { type: "json" };
 import { getRouteInventory } from "../contract/routes.js";
+import { readUsageStats } from "../../lib/cost-tracker.js";
 
 const APP_NAME = "DARKSOL Inference";
 
-export async function registerAppRoutes(fastify) {
+export async function registerAppRoutes(fastify, deps = {}) {
+  const readUsageStatsFn = deps.readUsageStats || readUsageStats;
+
   fastify.get("/v1/app/meta", async () => ({
     app: {
       name: APP_NAME,
@@ -33,5 +36,10 @@ export async function registerAppRoutes(fastify) {
         macos: "desktop/config/packaging.mac.json"
       }
     }
+  }));
+
+  fastify.get("/v1/app/usage", async () => ({
+    object: "usage",
+    ...(await readUsageStatsFn())
   }));
 }

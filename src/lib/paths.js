@@ -12,6 +12,7 @@ export const modelsRoot = configuredModelsRoot
   : path.join(darksolRoot, "models");
 export const registryPath = path.join(modelsRoot, "registry.json");
 export const logsRoot = path.join(darksolRoot, "logs");
+export const usagePath = path.join(darksolRoot, "usage.json");
 
 export async function ensureDarksolDirs() {
   await fs.mkdir(darksolRoot, { recursive: true });

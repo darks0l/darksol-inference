@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { textCompletion, textCompletionStream } from "../../engine/inference.js";
 import { modelPool } from "../../engine/pool.js";
 import { createOllamaClient, isOllamaModelId, toOllamaModelName } from "../../providers/ollama.js";
+import { estimateTokens, recordInferenceUsage } from "../../lib/cost-tracker.js";
 import { handleRouteError, isModelNotInstalledError, openAIError } from "./errors.js";
 import { createProviderInvoker, createRequestQueue } from "../inference-controls.js";
 
@@ -27,15 +28,35 @@ function createRequestAbortSignal(rawRequest) {
   return controller.signal;
 }
 
-async function respondFromOllama({ reply, request, client, model, prompt, stream, invokeProvider }) {
+async function safelyRecordUsage(recordInferenceUsageFn, usage) {
+  try {
+    await recordInferenceUsageFn(usage);
+  } catch {
+    // Usage tracking must never break inference responses.
+  }
+}
+
+async function respondFromOllama({
+  reply,
+  request,
+  client,
+  model,
+  prompt,
+  stream,
+  invokeProvider,
+  estimateTokensFn,
+  recordInferenceUsageFn
+}) {
   const ollamaModel = isOllamaModelId(model) ? toOllamaModelName(model) : model;
   const apiModelId = isOllamaModelId(model) ? model : `ollama/${model}`;
   const id = `cmpl-${crypto.randomUUID()}`;
   const created = Math.floor(Date.now() / 1000);
+  const promptTokens = estimateTokensFn(prompt);
 
   if (stream) {
     setupSse(reply);
     const signal = createRequestAbortSignal(request.raw);
+    let generated = "";
 
     await invokeProvider(
       () =>
@@ -45,6 +66,7 @@ async function respondFromOllama({ reply, request, client, model, prompt, stream
           stream: true,
           signal,
           onTextChunk: (chunk) => {
+            generated += chunk;
             const payload = {
               id,
               object: "text_completion",
@@ -57,6 +79,12 @@ async function respondFromOllama({ reply, request, client, model, prompt, stream
         }),
       { allowRetry: false }
     );
+
+    await safelyRecordUsage(recordInferenceUsageFn, {
+      provider: "ollama",
+      tokensIn: promptTokens,
+      tokensOut: estimateTokensFn(generated)
+    });
 
     writeSse(reply, {
       id,
@@ -77,6 +105,13 @@ async function respondFromOllama({ reply, request, client, model, prompt, stream
       stream: false
     })
   );
+  const completionTokens = estimateTokensFn(text);
+
+  await safelyRecordUsage(recordInferenceUsageFn, {
+    provider: "ollama",
+    tokensIn: promptTokens,
+    tokensOut: completionTokens
+  });
 
   return {
     id,
@@ -85,20 +120,22 @@ async function respondFromOllama({ reply, request, client, model, prompt, stream
     model: apiModelId,
     choices: [{ index: 0, text, finish_reason: "stop" }],
     usage: {
-      prompt_tokens: 0,
-      completion_tokens: 0,
-      total_tokens: 0
+      prompt_tokens: promptTokens,
+      completion_tokens: completionTokens,
+      total_tokens: promptTokens + completionTokens
     }
   };
 }
 
 export async function registerCompletionsRoutes(
   fastify,
-  { ollamaClient, requestQueue, providerInvoker } = {}
+  { ollamaClient, requestQueue, providerInvoker, estimateTokensFn, recordInferenceUsageFn } = {}
 ) {
   const client = ollamaClient || createOllamaClient();
   const queue = requestQueue || createRequestQueue();
   const invokeProvider = providerInvoker || createProviderInvoker();
+  const estimateTokensImpl = estimateTokensFn || estimateTokens;
+  const recordUsageImpl = recordInferenceUsageFn || recordInferenceUsage;
 
   fastify.post("/v1/completions", async (request, reply) => {
     return queue.enqueue(async () => {
@@ -114,7 +151,17 @@ export async function registerCompletionsRoutes(
 
       try {
         if (isOllamaModelId(model)) {
-          return await respondFromOllama({ reply, request, client, model, prompt, stream, invokeProvider });
+          return await respondFromOllama({
+            reply,
+            request,
+            client,
+            model,
+            prompt,
+            stream,
+            invokeProvider,
+            estimateTokensFn: estimateTokensImpl,
+            recordInferenceUsageFn: recordUsageImpl
+          });
         }
 
         let poolItem;
@@ -122,7 +169,17 @@ export async function registerCompletionsRoutes(
           poolItem = await modelPool.load(model);
         } catch (error) {
           if (client.enabled && isModelNotInstalledError(error)) {
-            return await respondFromOllama({ reply, request, client, model, prompt, stream, invokeProvider });
+            return await respondFromOllama({
+              reply,
+              request,
+              client,
+              model,
+              prompt,
+              stream,
+              invokeProvider,
+              estimateTokensFn: estimateTokensImpl,
+              recordInferenceUsageFn: recordUsageImpl
+            });
           }
           throw error;
         }
@@ -133,6 +190,7 @@ export async function registerCompletionsRoutes(
         if (stream) {
           setupSse(reply);
           const signal = createRequestAbortSignal(request.raw);
+          let generated = "";
 
           await invokeProvider(
             async () => {
@@ -143,6 +201,7 @@ export async function registerCompletionsRoutes(
                 temperature,
                 signal
               })) {
+                generated += chunk;
                 const payload = {
                   id,
                   object: "text_completion",
@@ -155,6 +214,12 @@ export async function registerCompletionsRoutes(
             },
             { allowRetry: false }
           );
+
+          await safelyRecordUsage(recordUsageImpl, {
+            provider: "local",
+            tokensIn: estimateTokensImpl(prompt),
+            tokensOut: estimateTokensImpl(generated)
+          });
 
           writeSse(reply, {
             id,
@@ -176,6 +241,14 @@ export async function registerCompletionsRoutes(
             temperature
           })
         );
+        const promptTokens = estimateTokensImpl(prompt);
+        const completionTokens = estimateTokensImpl(text);
+
+        await safelyRecordUsage(recordUsageImpl, {
+          provider: "local",
+          tokensIn: promptTokens,
+          tokensOut: completionTokens
+        });
 
         return {
           id,
@@ -184,9 +257,9 @@ export async function registerCompletionsRoutes(
           model,
           choices: [{ index: 0, text, finish_reason: "stop" }],
           usage: {
-            prompt_tokens: 0,
-            completion_tokens: 0,
-            total_tokens: 0
+            prompt_tokens: promptTokens,
+            completion_tokens: completionTokens,
+            total_tokens: promptTokens + completionTokens
           }
         };
       } catch (error) {
