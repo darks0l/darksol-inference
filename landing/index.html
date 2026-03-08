@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DARKSOL Inference — Local AI, No Compromises</title>
-  <meta name="description" content="Run LLMs locally with automatic hardware optimization. OpenAI-compatible API. Ollama model reuse. MCP tool integration. Free forever.">
-  <meta property="og:title" content="DARKSOL Inference">
-  <meta property="og:description" content="Local-first LLM inference engine. Your Ollama alternative, built smarter.">
+  <title>Darksol Studio — Local AI Inference Engine</title>
+  <meta name="description" content="Run LLMs locally with automatic hardware optimization. Desktop app, OpenAI-compatible API, MCP tools, Ollama model reuse. Free forever.">
+  <meta property="og:title" content="Darksol Studio">
+  <meta property="og:description" content="Local-first LLM inference engine. Your models, your hardware, your rules.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://darksol.cc">
   <meta name="twitter:card" content="summary_large_image">
@@ -14,15 +14,20 @@
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
   <style>
     :root {
-      --bg: #0a0a0f;
-      --bg-card: #12121a;
-      --border: #1e1e2e;
-      --text: #e0e0e8;
-      --text-dim: #8888a0;
-      --accent: #c9a227;
-      --accent-glow: rgba(201, 162, 39, 0.15);
+      --bg: #0d0d14;
+      --bg-surface: #13131d;
+      --bg-card: #1a1a28;
+      --bg-input: #222233;
+      --border: #2a2a3d;
+      --text: #e0e0ee;
+      --text-dim: #8888a8;
+      --text-muted: #555570;
+      --accent: #7c3aed;
+      --accent-light: #a855f7;
+      --accent-glow: rgba(124, 58, 237, 0.2);
+      --accent-deep: #5b21b6;
       --green: #22c55e;
-      --purple: #a855f7;
+      --green-dim: rgba(34, 197, 94, 0.15);
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -35,121 +40,233 @@
       overflow-x: hidden;
     }
 
-    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+    .container { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
 
-    /* Hero */
+    a { color: var(--accent-light); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ─── NAV ─── */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+
+    .nav-brand img { width: 36px; height: 36px; border-radius: 10px; }
+    .nav-brand span { font-size: 1.15rem; font-weight: 700; color: var(--text); }
+
+    .nav-links { display: flex; gap: 28px; align-items: center; }
+    .nav-links a { color: var(--text-dim); font-size: 0.9rem; font-weight: 500; text-decoration: none; }
+    .nav-links a:hover { color: var(--text); }
+
+    .nav-cta {
+      background: var(--accent);
+      color: #fff !important;
+      padding: 8px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+
+    .nav-cta:hover { background: var(--accent-deep); text-decoration: none; }
+
+    /* ─── HERO ─── */
     .hero {
       text-align: center;
-      padding: 80px 0 60px;
+      padding: 100px 0 80px;
       position: relative;
     }
 
     .hero::before {
       content: '';
       position: absolute;
-      top: 0; left: 50%;
+      top: -100px; left: 50%;
       transform: translateX(-50%);
-      width: 600px; height: 600px;
-      background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+      width: 700px; height: 700px;
+      background: radial-gradient(circle, var(--accent-glow) 0%, transparent 65%);
       pointer-events: none;
-      z-index: 0;
     }
 
     .hero-logo {
-      width: 120px;
-      height: 120px;
-      margin-bottom: 24px;
-      position: relative;
-      z-index: 1;
-      border-radius: 24px;
+      width: 100px; height: 100px;
+      margin-bottom: 28px;
+      position: relative; z-index: 1;
+      border-radius: 20px;
+      filter: drop-shadow(0 0 40px rgba(124, 58, 237, 0.4));
     }
 
     .hero h1 {
-      font-size: 3.2rem;
+      font-size: 3.4rem;
       font-weight: 800;
       letter-spacing: -0.03em;
-      position: relative;
-      z-index: 1;
-      margin-bottom: 8px;
+      position: relative; z-index: 1;
+      line-height: 1.15;
     }
 
-    .hero h1 span { color: var(--accent); }
+    .hero h1 .gradient {
+      background: linear-gradient(135deg, var(--accent-light), #c084fc, var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
 
     .hero .tagline {
-      font-size: 1.35rem;
+      font-size: 1.25rem;
       color: var(--text-dim);
-      max-width: 600px;
-      margin: 0 auto 32px;
-      position: relative;
-      z-index: 1;
+      max-width: 560px;
+      margin: 16px auto 40px;
+      position: relative; z-index: 1;
+    }
+
+    .hero-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      position: relative; z-index: 1;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover { background: var(--accent-deep); text-decoration: none; }
+
+    .btn-secondary {
+      background: var(--bg-card);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover { border-color: var(--accent); text-decoration: none; }
+
+    .btn svg { width: 18px; height: 18px; }
+
+    .hero-sub {
+      margin-top: 20px;
+      position: relative; z-index: 1;
     }
 
     .hero-install {
       display: inline-block;
       background: var(--bg-card);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 14px 28px;
-      font-family: 'SF Mono', 'Fira Code', monospace;
-      font-size: 1.1rem;
-      color: var(--accent);
-      position: relative;
-      z-index: 1;
+      border-radius: 10px;
+      padding: 10px 22px;
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 0.95rem;
+      color: var(--accent-light);
       cursor: pointer;
       transition: border-color 0.2s;
     }
 
     .hero-install:hover { border-color: var(--accent); }
+    .hero-install .dollar { color: var(--text-muted); margin-right: 6px; }
 
-    .hero-install .dollar { color: var(--text-dim); margin-right: 6px; }
-
-    .hero-sub {
-      margin-top: 16px;
-      color: var(--text-dim);
-      font-size: 0.9rem;
-      position: relative;
-      z-index: 1;
-    }
-
-    .hero-sub a { color: var(--accent); text-decoration: none; }
-    .hero-sub a:hover { text-decoration: underline; }
-
-    /* Stats bar */
-    .stats-bar {
-      display: flex;
-      justify-content: center;
-      gap: 48px;
-      padding: 32px 0;
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 64px;
-    }
-
-    .stat { text-align: center; }
-    .stat-value { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
-    .stat-label { font-size: 0.85rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; }
-
-    /* Features grid */
-    .features { padding: 0 0 64px; }
-    .features h2 {
+    /* ─── APP PREVIEW ─── */
+    .app-preview {
+      padding: 0 0 80px;
       text-align: center;
+    }
+
+    .app-preview img {
+      max-width: 100%;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      box-shadow: 0 20px 80px rgba(124, 58, 237, 0.15), 0 0 0 1px rgba(124, 58, 237, 0.1);
+    }
+
+    /* ─── STATS ─── */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      padding: 0 0 80px;
+    }
+
+    .stat-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+      text-align: center;
+    }
+
+    .stat-value {
       font-size: 2rem;
-      margin-bottom: 48px;
+      font-weight: 800;
+      color: var(--accent-light);
+    }
+
+    .stat-label {
+      font-size: 0.82rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-top: 4px;
+    }
+
+    /* ─── FEATURES ─── */
+    .features {
+      padding: 80px 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 56px;
+    }
+
+    .section-header h2 {
+      font-size: 2.2rem;
       font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .section-header p {
+      color: var(--text-dim);
+      font-size: 1.1rem;
+      max-width: 520px;
+      margin: 0 auto;
     }
 
     .features-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
     }
 
     .feature-card {
-      background: var(--bg-card);
+      background: var(--bg-surface);
       border: 1px solid var(--border);
-      border-radius: 16px;
+      border-radius: 14px;
       padding: 28px;
-      transition: border-color 0.2s, transform 0.2s;
+      transition: border-color 0.2s, transform 0.15s;
     }
 
     .feature-card:hover {
@@ -158,282 +275,370 @@
     }
 
     .feature-icon {
-      font-size: 1.8rem;
-      margin-bottom: 12px;
-      display: block;
+      width: 40px; height: 40px;
+      background: var(--accent-glow);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      margin-bottom: 16px;
     }
 
-    .feature-card h3 {
-      font-size: 1.15rem;
-      margin-bottom: 8px;
-      font-weight: 600;
-    }
+    .feature-card h3 { font-size: 1.05rem; margin-bottom: 8px; font-weight: 600; }
+    .feature-card p { color: var(--text-dim); font-size: 0.9rem; line-height: 1.55; }
 
-    .feature-card p {
-      color: var(--text-dim);
-      font-size: 0.95rem;
-      line-height: 1.5;
-    }
-
-    /* Comparison */
-    .comparison {
-      padding: 64px 0;
+    /* ─── DOWNLOAD ─── */
+    .download {
+      padding: 80px 0;
       border-top: 1px solid var(--border);
     }
 
-    .comparison h2 {
+    .download-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .download-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 36px 28px;
       text-align: center;
-      font-size: 2rem;
-      margin-bottom: 48px;
+      transition: border-color 0.2s;
+    }
+
+    .download-card:hover { border-color: var(--accent); }
+
+    .download-icon {
+      font-size: 2.4rem;
+      margin-bottom: 16px;
+    }
+
+    .download-card h3 { font-size: 1.15rem; margin-bottom: 6px; }
+
+    .download-card .version {
+      color: var(--text-dim);
+      font-size: 0.85rem;
+      margin-bottom: 20px;
+    }
+
+    .download-card .btn {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .download-card .alt {
+      display: block;
+      margin-top: 10px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* ─── COMPARISON ─── */
+    .comparison {
+      padding: 80px 0;
+      border-top: 1px solid var(--border);
     }
 
     .compare-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 24px;
+      gap: 20px;
       max-width: 800px;
       margin: 0 auto;
     }
 
     .compare-col {
-      background: var(--bg-card);
+      background: var(--bg-surface);
       border: 1px solid var(--border);
-      border-radius: 16px;
+      border-radius: 14px;
       padding: 28px;
     }
 
-    .compare-col.darksol { border-color: var(--accent); }
+    .compare-col.ours { border-color: var(--accent); }
 
-    .compare-col h3 {
-      font-size: 1.2rem;
-      margin-bottom: 16px;
-      font-weight: 700;
-    }
+    .compare-col h3 { font-size: 1.15rem; margin-bottom: 16px; font-weight: 700; }
+    .compare-col.ours h3 { color: var(--accent-light); }
 
-    .compare-col.darksol h3 { color: var(--accent); }
+    .compare-col ul { list-style: none; }
+    .compare-col li { padding: 5px 0; font-size: 0.92rem; color: var(--text-dim); }
+    .compare-col.ours li::before { content: '✓ '; color: var(--green); font-weight: 700; }
+    .compare-col.them li::before { content: '· '; color: var(--text-muted); }
 
-    .compare-col ul {
-      list-style: none;
-      padding: 0;
-    }
-
-    .compare-col li {
-      padding: 6px 0;
-      font-size: 0.95rem;
-      color: var(--text-dim);
-    }
-
-    .compare-col li::before { margin-right: 8px; }
-    .compare-col.darksol li::before { content: '✅'; }
-    .compare-col.ollama li::before { content: '⚪'; }
-
-    /* CLI demo */
+    /* ─── CLI DEMO ─── */
     .cli-demo {
-      padding: 64px 0;
-      border-top: 1px solid var(--border);
-    }
-
-    .cli-demo h2 {
-      text-align: center;
-      font-size: 2rem;
-      margin-bottom: 32px;
-    }
-
-    .terminal {
-      background: #0d0d14;
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 24px 28px;
-      font-family: 'SF Mono', 'Fira Code', monospace;
-      font-size: 0.95rem;
-      max-width: 700px;
-      margin: 0 auto;
-      overflow-x: auto;
-    }
-
-    .terminal .comment { color: #555; }
-    .terminal .cmd { color: var(--accent); }
-    .terminal .output { color: var(--text-dim); }
-    .terminal .green { color: var(--green); }
-    .terminal .line { margin-bottom: 4px; }
-
-    /* CTA */
-    .cta {
-      text-align: center;
       padding: 80px 0;
       border-top: 1px solid var(--border);
     }
 
-    .cta h2 {
-      font-size: 2.2rem;
-      margin-bottom: 16px;
-    }
-
-    .cta p {
-      color: var(--text-dim);
-      font-size: 1.1rem;
-      margin-bottom: 32px;
-    }
-
-    .cta-buttons {
-      display: flex;
-      justify-content: center;
-      gap: 16px;
-      flex-wrap: wrap;
-    }
-
-    .btn {
-      display: inline-block;
-      padding: 14px 32px;
-      border-radius: 12px;
-      font-size: 1rem;
-      font-weight: 600;
-      text-decoration: none;
-      transition: all 0.2s;
-    }
-
-    .btn-primary {
-      background: var(--accent);
-      color: #000;
-    }
-
-    .btn-primary:hover { filter: brightness(1.15); }
-
-    .btn-secondary {
-      background: transparent;
-      color: var(--text);
+    .terminal {
+      background: var(--bg-surface);
       border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      max-width: 720px;
+      margin: 0 auto;
     }
 
-    .btn-secondary:hover { border-color: var(--accent); }
+    .terminal-bar {
+      display: flex;
+      gap: 8px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+    }
 
-    /* Footer */
+    .terminal-dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: var(--border);
+    }
+
+    .terminal-dot.r { background: #ef4444; }
+    .terminal-dot.y { background: #eab308; }
+    .terminal-dot.g { background: #22c55e; }
+
+    .terminal-body {
+      padding: 20px 24px;
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 0.9rem;
+      line-height: 1.7;
+    }
+
+    .terminal-body .comment { color: var(--text-muted); }
+    .terminal-body .cmd { color: var(--accent-light); }
+    .terminal-body .output { color: var(--text-dim); }
+    .terminal-body .green { color: var(--green); }
+
+    /* ─── CTA ─── */
+    .cta {
+      text-align: center;
+      padding: 100px 0;
+      border-top: 1px solid var(--border);
+      position: relative;
+    }
+
+    .cta::before {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 600px; height: 400px;
+      background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .cta h2 { font-size: 2.4rem; margin-bottom: 16px; position: relative; z-index: 1; }
+    .cta p { color: var(--text-dim); font-size: 1.1rem; margin-bottom: 36px; position: relative; z-index: 1; }
+    .cta .hero-buttons { position: relative; z-index: 1; }
+
+    /* ─── FOOTER ─── */
     footer {
       text-align: center;
       padding: 32px 0;
       border-top: 1px solid var(--border);
-      color: var(--text-dim);
+      color: var(--text-muted);
       font-size: 0.85rem;
     }
 
-    footer a { color: var(--accent); text-decoration: none; }
-    footer a:hover { text-decoration: underline; }
+    footer .links { margin-bottom: 8px; }
+    footer .links a { color: var(--text-dim); margin: 0 12px; }
 
-    @media (max-width: 640px) {
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 768px) {
       .hero h1 { font-size: 2.2rem; }
-      .hero .tagline { font-size: 1.1rem; }
-      .stats-bar { flex-direction: column; gap: 20px; }
-      .compare-grid { grid-template-columns: 1fr; }
+      .hero .tagline { font-size: 1.05rem; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
       .features-grid { grid-template-columns: 1fr; }
+      .download-grid { grid-template-columns: 1fr; }
+      .compare-grid { grid-template-columns: 1fr; }
+      .nav-links { display: none; }
     }
   </style>
 </head>
 <body>
 
+<!-- NAV -->
+<div class="container">
+  <nav>
+    <a href="/" class="nav-brand">
+      <img src="logo.png" alt="Darksol">
+      <span>Darksol Studio</span>
+    </a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#download">Download</a>
+      <a href="https://gitlab.com/darks0l/darksol-inference">Source</a>
+      <a href="https://www.npmjs.com/package/darksol">npm</a>
+      <a href="#download" class="nav-cta">Download Free</a>
+    </div>
+  </nav>
+</div>
+
+<!-- HERO -->
 <section class="hero">
   <div class="container">
-    <img src="logo.png" alt="DARKSOL" class="hero-logo">
-    <h1><span>DARKSOL</span> Inference</h1>
-    <p class="tagline">Run LLMs locally with zero cloud dependency. Hardware-optimized from birth. Your Ollama alternative — built smarter.</p>
-    <div class="hero-install" onclick="navigator.clipboard.writeText('npm i -g darksol')">
-      <span class="dollar">$</span> npm i -g darksol
+    <img src="logo.png" alt="Darksol Studio" class="hero-logo">
+    <h1>Local AI.<br><span class="gradient">No compromises.</span></h1>
+    <p class="tagline">The desktop inference engine that runs LLMs on your hardware. OpenAI-compatible API. MCP tools. Ollama model reuse. Free forever.</p>
+    <div class="hero-buttons">
+      <a href="#download" class="btn btn-primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download for Free
+      </a>
+      <a href="https://gitlab.com/darks0l/darksol-inference" class="btn btn-secondary">View Source</a>
     </div>
-    <p class="hero-sub">
-      <a href="https://www.npmjs.com/package/darksol">npm</a> · 
-      <a href="https://gitlab.com/darks0l/darksol-inference">GitLab</a> · 
-      <a href="https://github.com/darks0l">GitHub</a>
-    </p>
+    <div class="hero-sub">
+      <div class="hero-install" onclick="navigator.clipboard.writeText('npm i -g darksol')" title="Click to copy">
+        <span class="dollar">$</span> npm i -g darksol
+      </div>
+    </div>
   </div>
 </section>
 
-<section class="stats-bar">
-  <div class="container" style="display:flex;justify-content:center;gap:48px;flex-wrap:wrap;">
-    <div class="stat">
+<!-- APP PREVIEW -->
+<section class="app-preview">
+  <div class="container">
+    <img src="app-preview.png" alt="Darksol Studio — Desktop Application">
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="container">
+  <div class="stats">
+    <div class="stat-card">
       <div class="stat-value">$0.00</div>
       <div class="stat-label">Cost per inference</div>
     </div>
-    <div class="stat">
+    <div class="stat-card">
       <div class="stat-value">69+</div>
       <div class="stat-label">Tests passing</div>
     </div>
-    <div class="stat">
+    <div class="stat-card">
       <div class="stat-value">100%</div>
       <div class="stat-label">Local & private</div>
     </div>
-    <div class="stat">
-      <div class="stat-value">0</div>
-      <div class="stat-label">Cloud required</div>
+    <div class="stat-card">
+      <div class="stat-value">∞</div>
+      <div class="stat-label">Models supported</div>
     </div>
   </div>
-</section>
+</div>
 
-<section class="features">
+<!-- FEATURES -->
+<section class="features" id="features">
   <div class="container">
-    <h2>Everything you need. Nothing you don't.</h2>
+    <div class="section-header">
+      <h2>Everything you need. Nothing you don't.</h2>
+      <p>Built for developers and power users who want full control over their AI stack.</p>
+    </div>
     <div class="features-grid">
       <div class="feature-card">
-        <span class="feature-icon">⚡</span>
+        <div class="feature-icon">⚡</div>
         <h3>Hardware-Aware Inference</h3>
-        <p>Auto-detects GPU, VRAM, CPU cores, and RAM. Optimizes gpu_layers, threads, and context size automatically. Powered by gpu-orchestrator.</p>
+        <p>Auto-detects GPU, VRAM, CPU cores, and RAM. Optimizes gpu_layers, threads, and context size automatically.</p>
       </div>
       <div class="feature-card">
-        <span class="feature-icon">🔌</span>
+        <div class="feature-icon">🔌</div>
         <h3>OpenAI-Compatible API</h3>
-        <p>Drop-in replacement. /v1/chat/completions, /v1/completions, /v1/models, /v1/embeddings. SSE streaming included.</p>
+        <p>Drop-in replacement. /v1/chat/completions, /v1/completions, /v1/models, /v1/embeddings. SSE streaming built in.</p>
       </div>
       <div class="feature-card">
-        <span class="feature-icon">🦙</span>
+        <div class="feature-icon">🦙</div>
         <h3>Ollama Model Reuse</h3>
-        <p>Already have Ollama models downloaded? DARKSOL finds and runs them directly — no re-download, no daemon required.</p>
+        <p>Already have Ollama models? Darksol finds and runs them directly — no re-download, no daemon required.</p>
       </div>
       <div class="feature-card">
-        <span class="feature-icon">🔍</span>
+        <div class="feature-icon">🔍</div>
         <h3>HuggingFace Directory</h3>
-        <p>Browse, search, and one-click download GGUF models. Hardware-aware recommendations tell you what fits before you pull.</p>
+        <p>Browse, search, and pull GGUF models. Hardware-aware fit indicators tell you what runs before you download.</p>
       </div>
       <div class="feature-card">
-        <span class="feature-icon">🔧</span>
+        <div class="feature-icon">🔧</div>
         <h3>MCP Tool Integration</h3>
-        <p>Connect external tools (CoinGecko, DexScreener, Etherscan, DefiLlama) via Model Context Protocol. Models get real-time data access.</p>
+        <p>Connect external tools via Model Context Protocol. CoinGecko, DexScreener, Etherscan, DefiLlama — pre-configured.</p>
       </div>
       <div class="feature-card">
-        <span class="feature-icon">💰</span>
+        <div class="feature-icon">🔑</div>
+        <h3>API Keys & Gateway</h3>
+        <p>Access large cloud models through Bankr LLM Gateway when you need them. Manage API keys securely from the app.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💰</div>
         <h3>Cost Tracking</h3>
-        <p>Every local inference is $0.00. Track your usage, tokens, and savings vs cloud. See exactly what you're not paying for.</p>
+        <p>Every local inference is $0.00. Track your usage, tokens processed, and savings vs cloud providers in real time.</p>
       </div>
       <div class="feature-card">
-        <span class="feature-icon">🌡️</span>
+        <div class="feature-icon">🌡️</div>
         <h3>Thermal Monitoring</h3>
-        <p>Real-time GPU/CPU temperature tracking. Know when your hardware is hot before it throttles.</p>
+        <p>Real-time GPU/CPU temperature tracking. Know when your hardware is hot before it throttles your inference.</p>
       </div>
       <div class="feature-card">
-        <span class="feature-icon">🖥️</span>
-        <h3>Desktop App (Coming)</h3>
-        <p>Full Electron desktop app with model browser, chat UI, MCP settings, and Bankr LLM gateway access for cloud models.</p>
+        <div class="feature-icon">🛠️</div>
+        <h3>Tool Use & Function Calling</h3>
+        <p>Enable models to call functions, execute code, and access files. Configurable per-session from the app settings panel.</p>
       </div>
     </div>
   </div>
 </section>
 
+<!-- DOWNLOAD -->
+<section class="download" id="download">
+  <div class="container">
+    <div class="section-header">
+      <h2>Download Darksol Studio</h2>
+      <p>Free. No account required. Your data never leaves your machine.</p>
+    </div>
+    <div class="download-grid">
+      <div class="download-card">
+        <div class="download-icon">🪟</div>
+        <h3>Windows</h3>
+        <div class="version">Windows 10+ · x64</div>
+        <a href="#" class="btn btn-primary" style="pointer-events:none;opacity:0.5;">Coming Soon</a>
+        <span class="alt">Installer (.exe) · ~85 MB</span>
+      </div>
+      <div class="download-card">
+        <div class="download-icon">🍎</div>
+        <h3>macOS</h3>
+        <div class="version">macOS 12+ · Intel & Apple Silicon</div>
+        <a href="#" class="btn btn-primary" style="pointer-events:none;opacity:0.5;">Coming Soon</a>
+        <span class="alt">Universal .dmg · ~90 MB</span>
+      </div>
+      <div class="download-card">
+        <div class="download-icon">🐧</div>
+        <h3>CLI (npm)</h3>
+        <div class="version">Node.js 18+ · All platforms</div>
+        <a href="https://www.npmjs.com/package/darksol" class="btn btn-primary">Install via npm</a>
+        <span class="alt">npm i -g darksol</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARISON -->
 <section class="comparison">
   <div class="container">
-    <h2>DARKSOL vs Ollama</h2>
+    <div class="section-header">
+      <h2>Darksol vs Ollama</h2>
+      <p>Same goal, different approach.</p>
+    </div>
     <div class="compare-grid">
-      <div class="compare-col darksol">
-        <h3>DARKSOL Inference</h3>
+      <div class="compare-col ours">
+        <h3>Darksol Studio</h3>
         <ul>
           <li>Hardware-optimized from birth</li>
           <li>Reuses existing Ollama models</li>
-          <li>HuggingFace model directory built in</li>
+          <li>HuggingFace directory built in</li>
           <li>MCP tool integration</li>
           <li>Cost tracking & savings</li>
-          <li>Desktop app + web UI</li>
+          <li>Desktop app + web UI + CLI</li>
           <li>Cloud gateway fallback (Bankr)</li>
           <li>"Will it fit?" before download</li>
-          <li>OpenAI-compatible API</li>
+          <li>Function calling & code execution</li>
         </ul>
       </div>
-      <div class="compare-col ollama">
+      <div class="compare-col them">
         <h3>Ollama</h3>
         <ul>
           <li>Basic hardware detection</li>
@@ -444,64 +649,80 @@
           <li>CLI only</li>
           <li>Local only, no fallback</li>
           <li>Download first, find out after</li>
-          <li>OpenAI-compatible API</li>
+          <li>No function calling</li>
         </ul>
       </div>
     </div>
   </div>
 </section>
 
+<!-- CLI DEMO -->
 <section class="cli-demo">
   <div class="container">
-    <h2>Get running in 30 seconds</h2>
+    <div class="section-header">
+      <h2>Or just use the CLI</h2>
+      <p>Everything works from the command line too.</p>
+    </div>
     <div class="terminal">
-      <div class="line comment"># Install globally</div>
-      <div class="line cmd">$ npm i -g darksol</div>
-      <div class="line"></div>
-      <div class="line comment"># Search for models (with hardware fit check)</div>
-      <div class="line cmd">$ darksol search llama</div>
-      <div class="line output">  llama-3.2-3b-gguf    3.2B  Q4_K_M  ✅ will fit</div>
-      <div class="line output">  llama-3.1-70b-gguf   70B   Q4_K_M  ❌ won't fit</div>
-      <div class="line"></div>
-      <div class="line comment"># Pull a model</div>
-      <div class="line cmd">$ darksol pull llama-3.2-3b-gguf</div>
-      <div class="line output">  Downloading... 100% (1.8 GB) ████████████████████ done</div>
-      <div class="line"></div>
-      <div class="line comment"># Run it</div>
-      <div class="line cmd">$ darksol run llama-3.2-3b "explain quantum computing"</div>
-      <div class="line green">  Quantum computing uses qubits instead of classical bits...</div>
-      <div class="line"></div>
-      <div class="line comment"># Already have Ollama models? Just use them</div>
-      <div class="line cmd">$ darksol run ollama/llama3.2 "hello world"</div>
-      <div class="line green">  Hello! How can I help you today?</div>
-      <div class="line"></div>
-      <div class="line comment"># Start the API server</div>
-      <div class="line cmd">$ darksol serve</div>
-      <div class="line output">  Server started at http://127.0.0.1:11435</div>
+      <div class="terminal-bar">
+        <span class="terminal-dot r"></span>
+        <span class="terminal-dot y"></span>
+        <span class="terminal-dot g"></span>
+      </div>
+      <div class="terminal-body">
+        <div class="comment"># Install globally</div>
+        <div class="cmd">$ npm i -g darksol</div>
+        <br>
+        <div class="comment"># Search models (with hardware fit check)</div>
+        <div class="cmd">$ darksol search llama</div>
+        <div class="output">&nbsp; llama-3.2-3b-gguf&nbsp;&nbsp;&nbsp;3.2B&nbsp; Q4_K_M&nbsp; <span class="green">✅ will fit</span></div>
+        <div class="output">&nbsp; llama-3.1-70b-gguf&nbsp; 70B&nbsp;&nbsp; Q4_K_M&nbsp; ❌ won't fit</div>
+        <br>
+        <div class="comment"># Pull and run</div>
+        <div class="cmd">$ darksol pull llama-3.2-3b-gguf</div>
+        <div class="output">&nbsp; Downloading... 100% (1.8 GB) ████████████████████ done</div>
+        <br>
+        <div class="cmd">$ darksol run llama-3.2-3b "explain quantum computing"</div>
+        <div class="green">&nbsp; Quantum computing uses qubits instead of classical bits...</div>
+        <br>
+        <div class="comment"># Use existing Ollama models directly</div>
+        <div class="cmd">$ darksol run ollama/llama3.2 "hello world"</div>
+        <div class="green">&nbsp; Hello! How can I help you today?</div>
+        <br>
+        <div class="comment"># Start the API server</div>
+        <div class="cmd">$ darksol serve</div>
+        <div class="output">&nbsp; Server started at http://127.0.0.1:11435</div>
+      </div>
     </div>
   </div>
 </section>
 
+<!-- CTA -->
 <section class="cta">
   <div class="container">
-    <h2>Your models. Your hardware. Your rules.</h2>
+    <h2>Your models. Your hardware.<br>Your rules.</h2>
     <p>No cloud. No subscriptions. No data leaving your machine.</p>
-    <div class="cta-buttons">
-      <a href="https://www.npmjs.com/package/darksol" class="btn btn-primary">Install Now</a>
-      <a href="https://gitlab.com/darks0l/darksol-inference" class="btn btn-secondary">View Source</a>
+    <div class="hero-buttons">
+      <a href="#download" class="btn btn-primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download Darksol Studio
+      </a>
+      <a href="https://gitlab.com/darks0l/darksol-inference" class="btn btn-secondary">View Source on GitLab</a>
     </div>
   </div>
 </section>
 
+<!-- FOOTER -->
 <footer>
   <div class="container">
-    <p>Built with teeth. 🌑</p>
-    <p style="margin-top:8px;">
-      <a href="https://darksol.net">darksol.net</a> · 
-      <a href="https://x.com/Darks0l_">@Darks0l_</a> · 
-      <a href="https://www.npmjs.com/package/darksol">npm</a> · 
+    <div class="links">
+      <a href="https://darksol.net">darksol.net</a>
+      <a href="https://x.com/Darks0l_">@Darks0l_</a>
+      <a href="https://www.npmjs.com/package/darksol">npm</a>
       <a href="https://gitlab.com/darks0l/darksol-inference">GitLab</a>
-    </p>
+      <a href="https://discord.gg/clawd">Discord</a>
+    </div>
+    <p>Built with teeth. 🌑</p>
   </div>
 </footer>
 
