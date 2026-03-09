@@ -1,11 +1,13 @@
 import { getRuntimeManager } from "../../runtime/manager.js";
 import { getKeepWarmScheduler } from "../../runtime/keep-warm.js";
-import { loadConfig } from "../../lib/config.js";
+import { loadConfig, saveConfig } from "../../lib/config.js";
+import { findAvailablePort, isPortAvailable, isValidPort } from "../../runtime/ports.js";
 
 export async function registerRuntimeRoutes(fastify, deps = {}) {
   const runtimeManager = deps.runtimeManager || getRuntimeManager();
   const keepWarmScheduler = deps.keepWarmScheduler || getKeepWarmScheduler();
   const loadConfigFn = deps.loadConfigFn || loadConfig;
+  const saveConfigFn = deps.saveConfigFn || saveConfig;
 
   fastify.get("/v1/runtime/status", async () => {
     const config = await loadConfigFn();
@@ -55,6 +57,62 @@ export async function registerRuntimeRoutes(fastify, deps = {}) {
       }
     });
     return { ok: true, runtime: "Darksol Engine", engine };
+  });
+
+  fastify.get("/v1/runtime/ports", async (request) => {
+    const config = await loadConfigFn();
+    const requestedPort = Number(request.query?.port || config.port);
+    const requestedHost = String(request.query?.host || config.host || "127.0.0.1");
+
+    const status = await isPortAvailable(requestedPort, requestedHost);
+    return {
+      runtime: "Darksol Engine",
+      host: requestedHost,
+      port: requestedPort,
+      available: status.available
+    };
+  });
+
+  fastify.post("/v1/runtime/ports/find", async (request, reply) => {
+    const config = await loadConfigFn();
+    const startPort = Number(request.body?.startPort || config.port || 11435);
+    const host = String(request.body?.host || config.host || "127.0.0.1");
+
+    if (!isValidPort(startPort)) {
+      return reply.code(400).send({ error: "invalid_start_port" });
+    }
+
+    const freePort = await findAvailablePort({ startPort, host, maxAttempts: 100 });
+    return {
+      runtime: "Darksol Engine",
+      host,
+      port: freePort,
+      available: true
+    };
+  });
+
+  fastify.post("/v1/runtime/config", async (request, reply) => {
+    const current = await loadConfigFn();
+    const body = request.body || {};
+
+    const host = typeof body.host === "string" ? body.host.trim() : current.host;
+    const requestedPort = body.findFreePort
+      ? await findAvailablePort({ startPort: Number(body.port || current.port), host, maxAttempts: 100 })
+      : Number(body.port ?? current.port);
+
+    if (!isValidPort(requestedPort)) {
+      return reply.code(400).send({ error: "invalid_port" });
+    }
+
+    const saved = await saveConfigFn({ host, port: requestedPort });
+    return {
+      ok: true,
+      runtime: "Darksol Engine",
+      config: {
+        host: saved.host,
+        port: saved.port
+      }
+    };
   });
 
   fastify.get("/v1/runtime/keepwarm", async () => {

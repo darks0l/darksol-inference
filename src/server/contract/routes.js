@@ -70,6 +70,30 @@ export const ROUTE_CONTRACT = [
     }
   },
   {
+    method: "POST",
+    path: "/v1/models/pull",
+    summary: "Download and register a model from HuggingFace",
+    auth: "bearer",
+    responses: {
+      200: "Model pull result",
+      400: "Invalid request",
+      401: "Missing or invalid API key",
+      502: "Upstream pull failure"
+    }
+  },
+  {
+    method: "POST",
+    path: "/v1/models/import-ollama",
+    summary: "Import an Ollama-local model into Darksol model registry",
+    auth: "bearer",
+    responses: {
+      200: "Model import result",
+      400: "Invalid request",
+      401: "Missing or invalid API key",
+      404: "Model not found"
+    }
+  },
+  {
     method: "GET",
     path: "/v1/directory/models",
     summary: "Search HuggingFace model directory",
@@ -202,6 +226,38 @@ export const ROUTE_CONTRACT = [
     auth: "bearer",
     responses: {
       200: "Runtime restart result",
+      401: "Missing or invalid API key"
+    }
+  },
+  {
+    method: "GET",
+    path: "/v1/runtime/ports",
+    summary: "Check if a host/port is available for runtime binding",
+    auth: "bearer",
+    responses: {
+      200: "Port availability payload",
+      401: "Missing or invalid API key"
+    }
+  },
+  {
+    method: "POST",
+    path: "/v1/runtime/ports/find",
+    summary: "Find a free port for runtime binding",
+    auth: "bearer",
+    responses: {
+      200: "Found free port",
+      400: "Invalid start port",
+      401: "Missing or invalid API key"
+    }
+  },
+  {
+    method: "POST",
+    path: "/v1/runtime/config",
+    summary: "Update runtime network config (host/port)",
+    auth: "bearer",
+    responses: {
+      200: "Runtime config update result",
+      400: "Invalid host/port",
       401: "Missing or invalid API key"
     }
   },

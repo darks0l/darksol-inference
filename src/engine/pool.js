@@ -2,6 +2,8 @@ import { detectHardware } from "../hardware/detect.js";
 import { optimizeForModel } from "../hardware/optimize.js";
 import { loadModelWithConfig, resolveModelPath } from "./loader.js";
 import { getInstalledModel, getModelFilePath } from "../models/manager.js";
+import { resolveOllamaLocalModel } from "../providers/ollama-local.js";
+import { toOllamaModelName, isOllamaModelId } from "../providers/ollama.js";
 
 async function disposeResource(resource) {
   if (!resource) {
@@ -89,14 +91,35 @@ export class ModelPool {
       return item;
     }
 
-    const metadata = options.metadata || await getInstalledModel(modelName);
+    let metadata = options.metadata || await getInstalledModel(modelName);
+    let resolvedModelPath = null;
+
+    // If not in Darksol registry, check Ollama local filesystem
+    if (!metadata) {
+      const ollamaName = isOllamaModelId(modelName) ? toOllamaModelName(modelName) : modelName;
+      const ollamaModel = await resolveOllamaLocalModel(ollamaName).catch(() => null);
+      if (ollamaModel && ollamaModel.ggufPath) {
+        metadata = {
+          name: modelName,
+          size: ollamaModel.size || 0,
+          quant: ollamaModel.quant,
+          family: ollamaModel.family,
+          parameterSize: ollamaModel.parameterSize,
+          source: "ollama-local"
+        };
+        resolvedModelPath = ollamaModel.ggufPath;
+      }
+    }
+
     if (!metadata) {
       throw new Error(`Model not installed: ${modelName}`);
     }
 
     await this.enforceLimits(metadata.size || 0);
 
-    const modelPath = await resolveModelPath(options.modelPath || getModelFilePath(modelName));
+    const modelPath = resolvedModelPath
+      ? resolvedModelPath
+      : await resolveModelPath(options.modelPath || getModelFilePath(modelName));
     const hardware = await detectHardware();
     const freeMemoryBytes = hardware?.memory?.free || 0;
     if (metadata.size && freeMemoryBytes > 0 && metadata.size > freeMemoryBytes * 0.95) {

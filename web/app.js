@@ -1,3 +1,4 @@
+/* global window, document, prompt */
 // DARKSOL Studio — Interactive UI Wiring
 // Connects the 4-panel desktop shell to real API endpoints.
 // Detects Electron (window.darksolDesktop) vs standalone browser (direct HTTP).
@@ -61,6 +62,7 @@
     mcpServers: [],
     runtimeStatus: null,
     usage: null,
+    portConfig: { host: "127.0.0.1", port: 11435 },
   };
 
   // ---------------------------------------------------------------------------
@@ -106,7 +108,6 @@
   function renderModels() {
     const listEl = $(".model-list");
     if (!listEl) return;
-    const treeBlock = listEl.closest(".tree-block");
 
     // Group by provider
     const darksol = state.models.filter((m) => m.provider === "darksol" || m.owned_by === "darksol");
@@ -430,7 +431,6 @@
     if (!gatewayCard || !state.runtimeStatus) return;
 
     const engine = state.runtimeStatus.engine || {};
-    const kw = state.runtimeStatus.keepWarm || {};
 
     // Update quota block to show runtime info
     const quotaCopy = $(".quota-copy", gatewayCard);
@@ -465,7 +465,7 @@
   // Add Model (Pull) Dialog
   // ---------------------------------------------------------------------------
   function initAddModelButton() {
-    const addBtn = $(".panel-title-row .icon-button");
+    const addBtn = $(".panel-title-row button[aria-label='Add model']");
     if (!addBtn) return;
     addBtn.addEventListener("click", () => {
       const name = prompt("Enter model name to pull (e.g. lfm2:latest):");
@@ -483,6 +483,142 @@
     } catch (err) {
       toast(`Pull failed: ${err.message}`, "error");
     }
+  }
+
+  function initImportOllamaButton() {
+    const btn = $("#import-ollama-btn");
+    if (!btn) return;
+    btn.addEventListener("click", openImportModal);
+  }
+
+  async function openImportModal() {
+    const candidates = state.models.filter((m) => m.provider === "ollama" || m.owned_by === "ollama");
+    if (candidates.length === 0) {
+      toast("No importable Ollama models found.");
+      return;
+    }
+
+    const overlay = document.createElement("div");
+    overlay.className = "modal-overlay";
+    overlay.innerHTML = `
+      <div class="modal-card">
+        <h3>Import from Ollama</h3>
+        <p class="modal-copy">Pick models to bring into Darksol. Link mode avoids duplicate disk usage.</p>
+        <div class="modal-list">
+          ${candidates.map((m) => `
+            <label class="modal-item">
+              <input type="checkbox" value="${esc(m.id)}" />
+              <span class="modal-item-name">${esc(m.id)}</span>
+              <span class="modal-item-size">${formatSize(m.size)}</span>
+            </label>
+          `).join("")}
+        </div>
+        <label class="field" style="margin-top:10px">
+          <span>Import mode</span>
+          <select id="import-mode">
+            <option value="link">Link (recommended)</option>
+            <option value="copy">Copy</option>
+          </select>
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="section-btn" id="import-cancel">Cancel</button>
+          <button type="button" class="section-btn" id="import-run">Import selected</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const close = () => overlay.remove();
+    $("#import-cancel", overlay)?.addEventListener("click", close);
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) close();
+    });
+
+    $("#import-run", overlay)?.addEventListener("click", async () => {
+      const mode = $("#import-mode", overlay)?.value || "link";
+      const selected = $$("input[type='checkbox']:checked", overlay).map((cb) => cb.value);
+      if (selected.length === 0) {
+        toast("Select at least one model.", "error");
+        return;
+      }
+
+      try {
+        for (const id of selected) {
+          await api("POST", "/v1/models/import-ollama", { modelId: id, mode });
+        }
+        toast(`Imported ${selected.length} model(s).`);
+        close();
+        await loadModels();
+      } catch (err) {
+        toast(`Import failed: ${err.message}`, "error");
+      }
+    });
+  }
+
+  function initPortService() {
+    const checkBtn = $("#check-port-btn");
+    const findBtn = $("#find-port-btn");
+    const applyBtn = $("#apply-port-btn");
+
+    const getPayload = () => ({
+      host: $("#port-host")?.value || "127.0.0.1",
+      port: Number($("#port-input")?.value || 11435),
+    });
+
+    const setStatus = (text, ok = true) => {
+      const status = $("#port-status");
+      if (!status) return;
+      status.textContent = text;
+      status.style.color = ok ? "var(--status-on)" : "#fca5a5";
+    };
+
+    checkBtn?.addEventListener("click", async () => {
+      try {
+        const { host, port } = getPayload();
+        const info = await api("GET", `/v1/runtime/ports?host=${encodeURIComponent(host)}&port=${port}`);
+        setStatus(info.available ? `Port ${port} is free` : `Port ${port} is in use`, info.available);
+      } catch (err) {
+        setStatus(`Check failed: ${err.message}`, false);
+      }
+    });
+
+    findBtn?.addEventListener("click", async () => {
+      try {
+        const { host, port } = getPayload();
+        const info = await api("POST", "/v1/runtime/ports/find", { host, startPort: port });
+        const input = $("#port-input");
+        if (input) input.value = String(info.port);
+        setStatus(`Found free port: ${info.port}`, true);
+      } catch (err) {
+        setStatus(`Find failed: ${err.message}`, false);
+      }
+    });
+
+    applyBtn?.addEventListener("click", async () => {
+      try {
+        const { host, port } = getPayload();
+        await api("POST", "/v1/runtime/config", { host, port });
+        await api("POST", "/v1/runtime/restart", {});
+        setStatus(`Applied ${host}:${port} and restarted runtime`, true);
+        toast("Runtime port updated.");
+      } catch (err) {
+        setStatus(`Apply failed: ${err.message}`, false);
+        toast(err.message, "error");
+      }
+    });
+
+    // Prime from current config
+    api("GET", "/v1/runtime/ports")
+      .then((info) => {
+        const hostSel = $("#port-host");
+        const portInput = $("#port-input");
+        if (hostSel) hostSel.value = info.host || "127.0.0.1";
+        if (portInput) portInput.value = String(info.port || 11435);
+      })
+      .catch(() => {
+        // silent
+      });
   }
 
   // ---------------------------------------------------------------------------
@@ -505,6 +641,8 @@
     initChat();
     initModelSearch();
     initAddModelButton();
+    initImportOllamaButton();
+    initPortService();
     initTreeToggles();
 
     // Load data in parallel

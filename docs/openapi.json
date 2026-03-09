@@ -115,6 +115,54 @@
         ]
       }
     },
+    "/v1/models/pull": {
+      "post": {
+        "summary": "Download and register a model from HuggingFace",
+        "responses": {
+          "200": {
+            "description": "Model pull result"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          },
+          "502": {
+            "description": "Upstream pull failure"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/models/import-ollama": {
+      "post": {
+        "summary": "Import an Ollama-local model into Darksol model registry",
+        "responses": {
+          "200": {
+            "description": "Model import result"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          },
+          "404": {
+            "description": "Model not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/v1/directory/models": {
       "get": {
         "summary": "Search HuggingFace model directory",
@@ -318,6 +366,66 @@
         "responses": {
           "200": {
             "description": "Runtime restart result"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/runtime/ports": {
+      "get": {
+        "summary": "Check if a host/port is available for runtime binding",
+        "responses": {
+          "200": {
+            "description": "Port availability payload"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/runtime/ports/find": {
+      "post": {
+        "summary": "Find a free port for runtime binding",
+        "responses": {
+          "200": {
+            "description": "Found free port"
+          },
+          "400": {
+            "description": "Invalid start port"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/runtime/config": {
+      "post": {
+        "summary": "Update runtime network config (host/port)",
+        "responses": {
+          "200": {
+            "description": "Runtime config update result"
+          },
+          "400": {
+            "description": "Invalid host/port"
           },
           "401": {
             "description": "Missing or invalid API key"

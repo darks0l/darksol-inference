@@ -43,9 +43,14 @@
       <aside class="models-panel" aria-label="My models">
         <header class="panel-title-row">
           <h2>MY MODELS</h2>
-          <button type="button" class="icon-button" aria-label="Add model">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4h2v7h7v2h-7v7h-2v-7H4v-2h7z" /></svg>
-          </button>
+          <div class="panel-actions">
+            <button type="button" class="icon-button" id="import-ollama-btn" title="Import from Ollama" aria-label="Import from Ollama">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 8v8l8 5 8-5V8l-8-5zm1 4.8 3.5 2-3.5 2.1V7.8zM11 7.8v4.1L7.5 9.8 11 7.8zm-4 4 4 2.3v4.3l-4-2.5v-4.1zm6 6.6v-4.3l4-2.3v4.1l-4 2.5z"/></svg>
+            </button>
+            <button type="button" class="icon-button" aria-label="Add model">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4h2v7h7v2h-7v7h-2v-7H4v-2h7z" /></svg>
+            </button>
+          </div>
         </header>
 
         <label class="search-box">
@@ -163,6 +168,31 @@
             <div class="progress"><span style="width: 68%"></span></div>
           </div>
           <button type="button" class="section-btn">Cost Settings</button>
+
+          <div class="runtime-service" id="runtime-service">
+            <h4>PORT SERVICE</h4>
+            <div class="port-row">
+              <label class="field" style="margin:0">
+                <span>Host</span>
+                <select id="port-host">
+                  <option value="127.0.0.1">localhost only</option>
+                  <option value="0.0.0.0">LAN accessible</option>
+                </select>
+              </label>
+              <label class="field" style="margin:0">
+                <span>Port</span>
+                <input id="port-input" type="number" min="1" max="65535" value="11435" />
+              </label>
+            </div>
+            <div class="port-actions">
+              <button type="button" class="section-btn" id="check-port-btn">Check Port</button>
+              <button type="button" class="section-btn" id="find-port-btn">Find Free</button>
+            </div>
+            <p class="port-status" id="port-status">Port status: unknown</p>
+            <div class="port-actions">
+              <button type="button" class="section-btn" id="apply-port-btn">Apply + Restart Runtime</button>
+            </div>
+          </div>
         </section>
 
         <section class="settings-card">

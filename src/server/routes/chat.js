@@ -240,27 +240,13 @@ export async function registerChatRoutes(
           maxToolRounds: 6
         };
 
-        if (isOllamaModelId(model)) {
-          return await respondFromOllama({
-            reply,
-            request,
-            client,
-            model,
-            messages,
-            stream,
-            invokeProvider,
-            estimateTokensFn: estimateTokensImpl,
-            estimateMessageTokensFn: estimateMessageTokensImpl,
-            recordInferenceUsageFn: recordUsageImpl,
-            mcp: mcpContext
-          });
-        }
-
+        // Try loading directly (works for Darksol-managed AND Ollama local GGUFs)
         let poolItem;
         try {
           poolItem = await modelPool.load(model);
         } catch (error) {
-          if (client.enabled && isModelNotInstalledError(error)) {
+          // If direct GGUF loading fails, fall back to Ollama daemon proxy
+          if (client.enabled && (isOllamaModelId(model) || isModelNotInstalledError(error))) {
             return await respondFromOllama({
               reply,
               request,
