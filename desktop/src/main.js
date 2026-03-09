@@ -3,7 +3,21 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import process from "node:process";
 import { app, BrowserWindow, dialog, ipcMain } from "electron";
-import packageJson from "../../package.json" with { type: "json" };
+import { createRequire } from "node:module";
+const require = createRequire(import.meta.url);
+
+// Load version info — try desktop package.json first (always in asar),
+// then root package.json (works in dev), then hardcoded fallback
+let packageJson;
+try {
+  packageJson = require("../package.json");
+} catch {
+  try {
+    packageJson = require("../../package.json");
+  } catch {
+    packageJson = { name: "darksol", version: "0.3.0" };
+  }
+}
 import { pollBackendHealth, probeBackendHealth, spawnBackendProcess } from "./backend.js";
 
 const __filename = fileURLToPath(import.meta.url);
