@@ -1,0 +1,11 @@
+name = "darksol-downloads"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+routes = [
+  { pattern = "darksol.net/desktop/*", zone_name = "darksol.net" },
+  { pattern = "www.darksol.net/desktop/*", zone_name = "darksol.net" }
+]
+
+[vars]
+GITLAB_PROJECT_ID = "80082659"
