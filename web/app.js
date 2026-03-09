@@ -62,6 +62,11 @@
     mcpServers: [],
     runtimeStatus: null,
     usage: null,
+    bankrConfig: {
+      enabled: false,
+      baseUrl: "https://llm.bankr.bot",
+      defaultRoute: "local"
+    },
     portConfig: { host: "127.0.0.1", port: 11435 },
   };
 
@@ -98,7 +103,17 @@
   async function loadModels() {
     try {
       const data = await api("GET", "/v1/models");
-      state.models = data.data || [];
+      const localModels = data.data || [];
+
+      let bankrModels = [];
+      try {
+        const remote = await api("GET", "/v1/bankr/models");
+        bankrModels = remote.data || [];
+      } catch {
+        bankrModels = [];
+      }
+
+      state.models = [...localModels, ...bankrModels];
       renderModels();
     } catch (err) {
       toast(`Failed to load models: ${err.message}`, "error");
@@ -112,6 +127,7 @@
     // Group by provider
     const darksol = state.models.filter((m) => m.provider === "darksol" || m.owned_by === "darksol");
     const ollama = state.models.filter((m) => m.provider === "ollama" || m.owned_by === "ollama");
+    const bankr = state.models.filter((m) => m.provider === "bankr" || m.owned_by === "bankr");
 
     let html = "";
 
@@ -142,6 +158,21 @@
               <span class="model-name">${esc(m.id)}</span>
             </div>
             <span class="model-size">${formatSize(m.size)}</span>
+          </li>`;
+      });
+    }
+
+    if (bankr.length > 0) {
+      html += `<li class="model-section-label">Bankr Cloud</li>`;
+      bankr.forEach((m) => {
+        const active = state.selectedModel === m.id ? "active" : "";
+        html += `
+          <li class="model-item ${active}" data-model-id="${esc(m.id)}">
+            <div class="model-meta">
+              <span class="dot online"></span>
+              <span class="model-name">${esc(m.id)}</span>
+            </div>
+            <span class="model-size">cloud</span>
           </li>`;
       });
     }
@@ -303,6 +334,7 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model: state.selectedModel,
+          route: state.selectedModel.startsWith("bankr/") ? "bankr" : (state.bankrConfig.defaultRoute || "local"),
           messages: state.messages,
           stream: true,
         }),
@@ -556,6 +588,94 @@
     });
   }
 
+  async function loadBankrConfig() {
+    try {
+      const config = await api("GET", "/v1/bankr/config");
+      state.bankrConfig = {
+        enabled: !!config.enabled,
+        baseUrl: config.baseUrl || "https://llm.bankr.bot",
+        defaultRoute: config.defaultRoute || "local"
+      };
+
+      const enabledEl = $("#bankr-enabled");
+      const baseUrlEl = $("#bankr-base-url");
+      const providerEl = $("#bankr-provider-mode");
+      if (enabledEl) enabledEl.checked = !!config.enabled;
+      if (baseUrlEl) baseUrlEl.value = config.baseUrl || "https://llm.bankr.bot";
+      if (providerEl) providerEl.value = config.defaultRoute || "local";
+
+      const usageCopy = $("#bankr-usage-copy");
+      if (usageCopy) {
+        usageCopy.innerHTML = `<span>Gateway</span><span>${config.apiKeyConfigured ? "configured" : "not configured"}</span>`;
+      }
+    } catch {
+      // silent
+    }
+  }
+
+  async function refreshBankrUsage() {
+    try {
+      const usage = await api("GET", "/v1/bankr/usage?days=30");
+      const totalCost = Number(usage?.totals?.totalCost || 0);
+      const totalReq = Number(usage?.totals?.totalRequests || 0);
+      const copy = $("#bankr-usage-copy");
+      const bar = $("#bankr-usage-bar");
+      if (copy) {
+        copy.innerHTML = `<span>30d usage</span><span>$${totalCost.toFixed(2)} • ${totalReq} req</span>`;
+      }
+      if (bar) {
+        const pct = Math.max(3, Math.min(100, totalCost > 0 ? Math.round((Math.log10(totalCost + 1) / 2) * 100) : 0));
+        bar.style.width = `${pct}%`;
+      }
+    } catch (err) {
+      toast(`Bankr usage unavailable: ${err.message}`);
+    }
+  }
+
+  function initBankrSettings() {
+    const saveBtn = $("#bankr-save-config");
+    const refreshBtn = $("#bankr-refresh-usage");
+    const keyToggle = $("#bankr-key-visibility");
+
+    keyToggle?.addEventListener("click", () => {
+      const keyInput = $("#bankr-api-key");
+      if (!keyInput) return;
+      keyInput.type = keyInput.type === "password" ? "text" : "password";
+    });
+
+    refreshBtn?.addEventListener("click", () => {
+      refreshBankrUsage();
+    });
+
+    saveBtn?.addEventListener("click", async () => {
+      const enabled = !!$("#bankr-enabled")?.checked;
+      const baseUrl = $("#bankr-base-url")?.value?.trim() || "https://llm.bankr.bot";
+      const apiKey = $("#bankr-api-key")?.value?.trim() || undefined;
+      const defaultRoute = $("#bankr-provider-mode")?.value === "bankr" ? "bankr" : "local";
+
+      try {
+        const saved = await api("POST", "/v1/bankr/config", {
+          enabled,
+          baseUrl,
+          ...(apiKey !== undefined ? { apiKey } : {}),
+          defaultRoute
+        });
+
+        state.bankrConfig = {
+          enabled: !!saved.enabled,
+          baseUrl: saved.baseUrl,
+          defaultRoute: saved.defaultRoute || "local"
+        };
+
+        toast("Bankr settings saved.");
+        await refreshBankrUsage();
+        await loadModels();
+      } catch (err) {
+        toast(`Failed to save Bankr settings: ${err.message}`, "error");
+      }
+    });
+  }
+
   function initPortService() {
     const checkBtn = $("#check-port-btn");
     const findBtn = $("#find-port-btn");
@@ -642,15 +762,18 @@
     initModelSearch();
     initAddModelButton();
     initImportOllamaButton();
+    initBankrSettings();
     initPortService();
     initTreeToggles();
 
     // Load data in parallel
     await Promise.allSettled([
+      loadBankrConfig(),
       loadModels(),
       loadMcpServers(),
       loadRuntimeStatus(),
       loadUsage(),
+      refreshBankrUsage(),
     ]);
 
     // Periodic refresh (every 30s)

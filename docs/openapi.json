@@ -270,6 +270,82 @@
         ]
       }
     },
+    "/v1/bankr/config": {
+      "get": {
+        "summary": "Get Bankr gateway runtime config (non-secret)",
+        "responses": {
+          "200": {
+            "description": "Bankr config payload"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Update Bankr gateway runtime config",
+        "responses": {
+          "200": {
+            "description": "Bankr config update result"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/bankr/models": {
+      "get": {
+        "summary": "List Bankr cloud models",
+        "responses": {
+          "200": {
+            "description": "Model list"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          },
+          "502": {
+            "description": "Bankr unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/bankr/usage": {
+      "get": {
+        "summary": "Get Bankr usage summary",
+        "responses": {
+          "200": {
+            "description": "Usage summary"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          },
+          "502": {
+            "description": "Bankr unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/v1/app/meta": {
       "get": {
         "summary": "App bootstrap metadata and route inventory",

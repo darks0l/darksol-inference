@@ -13,6 +13,11 @@ const defaultConfig = {
   providerRetryCount: 1,
   ollamaEnabled: true,
   ollamaBaseUrl: "http://127.0.0.1:11434",
+  bankrEnabled: false,
+  bankrBaseUrl: "https://llm.bankr.bot",
+  bankrApiKey: null,
+  bankrSandbox: true,
+  bankrDefaultRoute: "local",
   keepWarmEnabled: false,
   keepWarmModel: null,
   keepWarmIntervalSec: 120

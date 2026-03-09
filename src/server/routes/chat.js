@@ -8,6 +8,8 @@ import { createProviderInvoker, createRequestQueue } from "../inference-controls
 import { createMcpRegistry } from "../../mcp/registry.js";
 import { createMcpExecutor } from "../../mcp/executor.js";
 import { buildOpenAITools, hasEnabledTools } from "../../mcp/tool-injector.js";
+import { createBankrClientFromConfig } from "../../bankr/client.js";
+import { loadConfig } from "../../lib/config.js";
 
 function setupSse(reply) {
   reply.raw.writeHead(200, {
@@ -180,6 +182,111 @@ async function respondFromOllama({
   };
 }
 
+function isBankrModelId(modelId = "") {
+  return String(modelId).startsWith("bankr/");
+}
+
+function toBankrModelName(modelId = "") {
+  return String(modelId).replace(/^bankr\//, "");
+}
+
+async function respondFromBankr({
+  reply,
+  request,
+  bankrClient,
+  model,
+  messages,
+  stream,
+  maxTokens,
+  temperature,
+  estimateTokensFn,
+  estimateMessageTokensFn,
+  recordInferenceUsageFn
+}) {
+  const upstreamModel = toBankrModelName(model);
+  const promptTokensEstimate = estimateMessageTokensFn(messages);
+
+  if (stream) {
+    setupSse(reply);
+    const signal = createRequestAbortSignal(request.raw);
+    const upstreamResponse = await bankrClient.chatCompletions(
+      {
+        model: upstreamModel,
+        messages,
+        stream: true,
+        ...(maxTokens ? { max_tokens: maxTokens } : {}),
+        ...(temperature !== undefined ? { temperature } : {})
+      },
+      { signal }
+    );
+
+    if (!upstreamResponse.ok || !upstreamResponse.body) {
+      const error = await upstreamResponse.json().catch(() => ({ error: { message: "Bankr stream failed" } }));
+      throw new Error(error?.error?.message || `Bankr stream failed (${upstreamResponse.status})`);
+    }
+
+    const decoder = new TextDecoder();
+    let generated = "";
+
+    for await (const chunk of upstreamResponse.body) {
+      const text = decoder.decode(chunk, { stream: true });
+      reply.raw.write(text);
+
+      for (const line of text.split(/\r?\n/)) {
+        if (!line.startsWith("data: ")) continue;
+        const payload = line.slice(6).trim();
+        if (!payload || payload === "[DONE]") continue;
+        try {
+          const parsed = JSON.parse(payload);
+          const delta = parsed?.choices?.[0]?.delta?.content;
+          if (delta) {
+            generated += delta;
+          }
+        } catch {
+          // noop
+        }
+      }
+    }
+
+    await safelyRecordUsage(recordInferenceUsageFn, {
+      provider: "bankr",
+      tokensIn: promptTokensEstimate,
+      tokensOut: estimateTokensFn(generated)
+    });
+
+    if (!reply.raw.writableEnded) {
+      reply.raw.end();
+    }
+
+    return reply;
+  }
+
+  const upstreamResponse = await bankrClient.chatCompletions({
+    model: upstreamModel,
+    messages,
+    stream: false,
+    ...(maxTokens ? { max_tokens: maxTokens } : {}),
+    ...(temperature !== undefined ? { temperature } : {})
+  });
+
+  const payload = await upstreamResponse.json().catch(() => null);
+  if (!upstreamResponse.ok) {
+    throw new Error(payload?.error?.message || `Bankr request failed (${upstreamResponse.status})`);
+  }
+
+  const usage = payload?.usage || {};
+  await safelyRecordUsage(recordInferenceUsageFn, {
+    provider: "bankr",
+    tokensIn: usage.prompt_tokens ?? promptTokensEstimate,
+    tokensOut: usage.completion_tokens ?? estimateTokensFn(payload?.choices?.[0]?.message?.content || "")
+  });
+
+  return {
+    ...payload,
+    model: `bankr/${payload?.model || upstreamModel}`
+  };
+}
+
 export async function registerChatRoutes(
   fastify,
   {
@@ -190,7 +297,8 @@ export async function registerChatRoutes(
     estimateMessageTokensFn,
     recordInferenceUsageFn,
     mcpRegistry,
-    mcpExecutor
+    mcpExecutor,
+    loadConfigFn
   } = {}
 ) {
   const client = ollamaClient || createOllamaClient();
@@ -201,6 +309,7 @@ export async function registerChatRoutes(
   const recordUsageImpl = recordInferenceUsageFn || recordInferenceUsage;
   const registry = mcpRegistry || createMcpRegistry();
   const executor = mcpExecutor || createMcpExecutor();
+  const loadConfigImpl = loadConfigFn || loadConfig;
 
   fastify.post("/v1/chat/completions", async (request, reply) => {
     return queue.enqueue(async () => {
@@ -209,7 +318,9 @@ export async function registerChatRoutes(
         messages = [],
         stream = false,
         max_tokens: maxTokens,
-        temperature
+        temperature,
+        route,
+        provider
       } = request.body || {};
 
       if (!model) {
@@ -239,6 +350,31 @@ export async function registerChatRoutes(
           executor,
           maxToolRounds: 6
         };
+
+        const config = await loadConfigImpl();
+        const requestedRoute = String(route || provider || "").toLowerCase();
+        const useBankr = isBankrModelId(model) || requestedRoute === "bankr" || (requestedRoute !== "local" && config.bankrDefaultRoute === "bankr");
+
+        if (useBankr) {
+          const bankrClient = await createBankrClientFromConfig();
+          if (!bankrClient.isConfigured()) {
+            return openAIError(reply, 400, "Bankr route requested but not configured.", "invalid_request_error", "bankr_not_configured");
+          }
+
+          return await respondFromBankr({
+            reply,
+            request,
+            bankrClient,
+            model,
+            messages,
+            stream,
+            maxTokens,
+            temperature,
+            estimateTokensFn: estimateTokensImpl,
+            estimateMessageTokensFn: estimateMessageTokensImpl,
+            recordInferenceUsageFn: recordUsageImpl
+          });
+        }
 
         // Try loading directly (works for Darksol-managed AND Ollama local GGUFs)
         let poolItem;

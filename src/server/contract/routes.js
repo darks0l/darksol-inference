@@ -171,6 +171,48 @@ export const ROUTE_CONTRACT = [
   },
   {
     method: "GET",
+    path: "/v1/bankr/config",
+    summary: "Get Bankr gateway runtime config (non-secret)",
+    auth: "bearer",
+    responses: {
+      200: "Bankr config payload",
+      401: "Missing or invalid API key"
+    }
+  },
+  {
+    method: "POST",
+    path: "/v1/bankr/config",
+    summary: "Update Bankr gateway runtime config",
+    auth: "bearer",
+    responses: {
+      200: "Bankr config update result",
+      401: "Missing or invalid API key"
+    }
+  },
+  {
+    method: "GET",
+    path: "/v1/bankr/models",
+    summary: "List Bankr cloud models",
+    auth: "bearer",
+    responses: {
+      200: "Model list",
+      401: "Missing or invalid API key",
+      502: "Bankr unavailable"
+    }
+  },
+  {
+    method: "GET",
+    path: "/v1/bankr/usage",
+    summary: "Get Bankr usage summary",
+    auth: "bearer",
+    responses: {
+      200: "Usage summary",
+      401: "Missing or invalid API key",
+      502: "Bankr unavailable"
+    }
+  },
+  {
+    method: "GET",
     path: "/v1/app/meta",
     summary: "App bootstrap metadata and route inventory",
     auth: "bearer",

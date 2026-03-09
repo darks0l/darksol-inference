@@ -146,28 +146,42 @@
           </div>
           <label class="field">
             <span>Provider</span>
-            <select>
-              <option>BANKR Cloud</option>
-              <option>Local fallback</option>
+            <select id="bankr-provider-mode">
+              <option value="local">Local default</option>
+              <option value="bankr">Bankr default</option>
             </select>
+          </label>
+          <label class="field">
+            <span>Base URL</span>
+            <input id="bankr-base-url" type="text" value="https://llm.bankr.bot" />
           </label>
           <label class="field">
             <span>Access Key</span>
             <div class="secure-input">
-              <input type="password" value="••••••••••••••••" />
-              <button type="button" class="icon-button" aria-label="Toggle key visibility">
+              <input id="bankr-api-key" type="password" value="" placeholder="bk_..." />
+              <button type="button" class="icon-button" id="bankr-key-visibility" aria-label="Toggle key visibility">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6c5.3 0 9.3 5 9.8 5.6l.2.3-.2.3C21.3 12.9 17.3 18 12 18S2.7 12.9 2.2 12.2L2 12l.2-.3C2.7 11 6.7 6 12 6zm0 2c-3.5 0-6.4 2.9-7.6 4 1.2 1.1 4.1 4 7.6 4s6.4-2.9 7.6-4c-1.2-1.1-4.1-4-7.6-4zm0 1.8a2.2 2.2 0 1 1 0 4.4 2.2 2.2 0 0 1 0-4.4z" /></svg>
               </button>
             </div>
           </label>
-          <div class="quota-block">
-            <div class="quota-copy">
-              <span>Usage quota</span>
-              <span>68%</span>
-            </div>
-            <div class="progress"><span style="width: 68%"></span></div>
+          <div class="toggle-row">
+            <span>Enable Bankr Gateway</span>
+            <label class="switch">
+              <input id="bankr-enabled" type="checkbox" />
+              <span></span>
+            </label>
           </div>
-          <button type="button" class="section-btn">Cost Settings</button>
+          <div class="quota-block" id="bankr-usage-block">
+            <div class="quota-copy" id="bankr-usage-copy">
+              <span>Usage quota</span>
+              <span>--</span>
+            </div>
+            <div class="progress"><span id="bankr-usage-bar" style="width: 0%"></span></div>
+          </div>
+          <div class="port-actions">
+            <button type="button" class="section-btn" id="bankr-refresh-usage">Refresh Usage</button>
+            <button type="button" class="section-btn" id="bankr-save-config">Save Bankr Settings</button>
+          </div>
 
           <div class="runtime-service" id="runtime-service">
             <h4>PORT SERVICE</h4>
