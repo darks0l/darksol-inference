@@ -1,6 +1,8 @@
-// Preload bridge placeholder for a future desktop runtime.
-export function createBridge() {
-  return {
-    version: "phase8-placeholder"
-  };
-}
+import { contextBridge, ipcRenderer } from "electron";
+
+const desktopBridge = {
+  getAppMeta: () => ipcRenderer.invoke("desktop:get-app-meta"),
+  getBackendHealth: () => ipcRenderer.invoke("desktop:get-backend-health")
+};
+
+contextBridge.exposeInMainWorld("darksolDesktop", desktopBridge);
