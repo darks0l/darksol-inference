@@ -1,12 +1,19 @@
 # Changelog
 
-## Unreleased
-- Added Darksol Engine Runtime Manager (`src/runtime/manager.js`) with managed `darksol serve` lifecycle controls (`start`, `stop`, `restart`), PID ownership at `~/.darksol/darksol.pid`, health polling, and runtime status reporting (`running/stopped`, uptime, port, loaded model count).
-- Added Darksol Engine Keep-Warm scheduler (`src/runtime/keep-warm.js`) with config-backed controls (`keepWarmEnabled`, `keepWarmModel`, `keepWarmIntervalSec`, default `120`) and periodic lightweight inference pings to keep models resident.
-- Added runtime control API routes: `GET /v1/runtime/status`, `POST /v1/runtime/start`, `POST /v1/runtime/stop`, `POST /v1/runtime/restart`, `GET /v1/runtime/keepwarm`, `POST /v1/runtime/keepwarm`.
-- Added CLI command groups for runtime and keep-warm operations: `darksol runtime status|start|stop|restart` and `darksol keepwarm status|enable --model <name> --interval <sec>|disable`.
-- Added desktop IPC bridge methods for runtime and keep-warm controls in `desktop/src/preload.js` and `desktop/src/main.js`.
-- Added deterministic test coverage for runtime manager helpers, keep-warm scheduler behavior, and keep-warm config persistence.
+## 0.3.0
+- **Bankr LLM Gateway — full integration.** Real client for Bankr's OpenAI-compatible cloud gateway (`https://llm.bankr.bot`): model listing, usage summaries, streaming chat completions with SSE passthrough, and cost tracking. New API routes: `GET/POST /v1/bankr/config`, `GET /v1/bankr/models`, `GET /v1/bankr/usage`. Chat router supports `bankr/<model>` ids, explicit `route: "bankr"`, and config-based default route (`local`/`bankr`). Settings UI wired with enable toggle, base URL, API key, default route selector, save + usage refresh.
+- **Ollama import UI.** New "Import from Ollama" modal in Models panel — multi-select your existing Ollama models and import them into Darksol via zero-copy hardlink (recommended) or full copy. New API: `POST /v1/models/import-ollama`.
+- **Direct Ollama GGUF loading.** Ollama models now load directly through node-llama-cpp from filesystem GGUFs — no Ollama daemon needed for inference. Pool falls back to daemon proxy only if direct loading fails.
+- **In-app model pull.** New `POST /v1/models/pull` API for pulling HuggingFace models from the UI.
+- **Runtime port service.** Lightweight port management in Settings: host selector (localhost/LAN), port input, check availability, find free port, apply + restart runtime. New APIs: `GET /v1/runtime/ports`, `POST /v1/runtime/ports/find`, `POST /v1/runtime/config`.
+- **Interactive Studio UI.** Wired all 4 panels to real API endpoints: Models panel (live model list, search, provider grouping, click-to-select), Chat panel (real SSE streaming inference, typing indicator, abort, message history), Settings panel (MCP toggles, runtime status, Bankr config, port service). Toast notifications, empty state placeholders, tree collapse, 30s auto-refresh.
+- **Filesystem-first model discovery.** `/v1/models` now discovers Ollama models from disk before falling back to Ollama API — works without daemon.
+- Added Darksol Engine Runtime Manager with managed lifecycle controls, PID ownership, health polling, and runtime status reporting.
+- Added Keep-Warm scheduler with config-backed controls and periodic inference pings to keep models resident.
+- Added runtime control API routes and CLI command groups for runtime and keep-warm operations.
+- Added desktop IPC bridge methods for runtime and keep-warm controls.
+- Added deterministic test coverage for runtime manager, keep-warm scheduler, and config persistence.
+- Updated OpenAPI contract and route inventory for all new endpoints.
 
 ## 0.2.1
 - npm docs cleanup: removed npm-facing README clutter around portal/web implementation details and kept README focused on install + usage.

@@ -89,7 +89,20 @@ Default: `http://127.0.0.1:11435`
 | `/v1/mcp/servers` | GET | MCP server registry |
 | `/v1/mcp/servers/:name/enable` | POST | Enable an MCP server |
 | `/v1/mcp/servers/:name/disable` | POST | Disable an MCP server |
+| `/v1/models/pull` | POST | Pull a model from HuggingFace |
+| `/v1/models/import-ollama` | POST | Import an Ollama model into Darksol |
+| `/v1/runtime/ports` | GET | Check port availability |
+| `/v1/runtime/ports/find` | POST | Find a free port |
+| `/v1/runtime/config` | POST | Update runtime host/port config |
+| `/v1/runtime/status` | GET | Engine runtime status |
+| `/v1/runtime/start` | POST | Start managed runtime |
+| `/v1/runtime/stop` | POST | Stop managed runtime |
+| `/v1/runtime/restart` | POST | Restart managed runtime |
+| `/v1/runtime/keepwarm` | GET/POST | Keep-warm scheduler config |
 | `/v1/bankr/health` | GET | Bankr gateway status |
+| `/v1/bankr/config` | GET/POST | Bankr gateway config |
+| `/v1/bankr/models` | GET | Bankr cloud model list |
+| `/v1/bankr/usage` | GET | Bankr usage summary |
 
 ### Example: Chat Completion
 
