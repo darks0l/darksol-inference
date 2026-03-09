@@ -154,7 +154,7 @@ For architecture details (desktop shell + web portal implementation), see:
 
 - `docs/PHASE8_DESKTOP_WEB_ARCHITECTURE.md`
 
-### Desktop Dev + Installer (Windows)
+### Desktop Dev + Installer
 
 From repo root:
 
@@ -167,11 +167,16 @@ npm run desktop:dev
 
 # build Windows NSIS installer
 npm run desktop:build:win
+
+# build macOS DMG (Intel + Apple Silicon)
+npm run desktop:build:mac
 ```
 
-Installer output path:
+Installer output paths:
 
-- `desktop/dist/darksol-inference-desktop-<version>-setup.exe`
+- **Windows:** `desktop/dist/darksol-inference-desktop-<version>-setup.exe`
+- **macOS x64:** `desktop/dist/darksol-inference-desktop-<version>-x64.dmg`
+- **macOS arm64:** `desktop/dist/darksol-inference-desktop-<version>-arm64.dmg`
 
 The npm README stays focused on install + usage.
 

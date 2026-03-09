@@ -9,6 +9,8 @@
     "dev": "electron .",
     "start": "electron .",
     "build:win": "electron-builder --win nsis",
+    "build:mac": "electron-builder --mac dmg",
+    "build:mac:universal": "electron-builder --mac dmg --universal",
     "build:dir": "electron-builder --dir"
   },
   "devDependencies": {
@@ -40,6 +42,38 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true
+    },
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "artifactName": "darksol-inference-desktop-${version}-${arch}.${ext}",
+      "darkModeSupport": true,
+      "hardenedRuntime": true,
+      "entitlements": "config/entitlements.mac.plist",
+      "entitlementsInherit": "config/entitlements.mac.plist"
+    },
+    "dmg": {
+      "artifactName": "darksol-inference-desktop-${version}-${arch}.${ext}",
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
     }
   }
 }

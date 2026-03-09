@@ -23,7 +23,8 @@
     "generate:openapi": "node scripts/generate-openapi.mjs",
     "generate:icons": "node scripts/generate-icons.mjs",
     "desktop:dev": "npm --prefix desktop run dev",
-    "desktop:build:win": "npm --prefix desktop run build:win"
+    "desktop:build:win": "npm --prefix desktop run build:win",
+    "desktop:build:mac": "npm --prefix desktop run build:mac"
   },
   "engines": {
     "node": ">=20"
