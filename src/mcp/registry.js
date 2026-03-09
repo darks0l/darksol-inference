@@ -29,6 +29,68 @@ const PRECONFIGURED_SERVERS = [
     toolsSchema: [],
     auth: { type: "none" },
     enabled: false
+  },
+  {
+    name: "Darksol Wallet",
+    endpoint: "http://127.0.0.1:11435/wallet/mcp",
+    toolsSchema: [
+      {
+        name: "wallet_address",
+        description: "Get active wallet address from local signer",
+        input_schema: { type: "object", properties: {} }
+      },
+      {
+        name: "wallet_balance",
+        description: "Get native/token balances for the active wallet",
+        input_schema: { type: "object", properties: {} }
+      },
+      {
+        name: "wallet_policy",
+        description: "Get signer safety policy (limits/allowlist)",
+        input_schema: { type: "object", properties: {} }
+      },
+      {
+        name: "wallet_send",
+        description: "Send a transaction through local signer policy controls",
+        input_schema: {
+          type: "object",
+          properties: {
+            to: { type: "string" },
+            value: { type: "string" },
+            data: { type: "string" },
+            chainId: { type: "number" }
+          },
+          required: ["to"]
+        }
+      },
+      {
+        name: "wallet_sign_message",
+        description: "Sign an arbitrary message with the active wallet",
+        input_schema: {
+          type: "object",
+          properties: {
+            message: { type: "string" }
+          },
+          required: ["message"]
+        }
+      },
+      {
+        name: "wallet_sign_typed_data",
+        description: "Sign EIP-712 typed data payload with active wallet",
+        input_schema: {
+          type: "object",
+          properties: {
+            domain: { type: "object" },
+            types: { type: "object" },
+            message: { type: "object" },
+            primaryType: { type: "string" }
+          },
+          required: ["domain", "types", "message", "primaryType"]
+        }
+      }
+    ],
+    auth: { type: "none" },
+    enabled: false
   }
 ];
 

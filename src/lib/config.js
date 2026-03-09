@@ -20,7 +20,10 @@ const defaultConfig = {
   bankrDefaultRoute: "local",
   keepWarmEnabled: false,
   keepWarmModel: null,
-  keepWarmIntervalSec: 120
+  keepWarmIntervalSec: 120,
+  walletEnabled: false,
+  walletSignerBaseUrl: "http://127.0.0.1:18790",
+  walletSignerToken: null
 };
 
 function resolveConfigPath(options = {}) {

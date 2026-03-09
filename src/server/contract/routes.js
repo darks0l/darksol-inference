@@ -213,6 +213,116 @@ export const ROUTE_CONTRACT = [
   },
   {
     method: "GET",
+    path: "/v1/wallet/health",
+    summary: "Wallet signer health/config status",
+    auth: "bearer",
+    responses: {
+      200: "Wallet health payload",
+      401: "Missing or invalid API key"
+    }
+  },
+  {
+    method: "GET",
+    path: "/v1/wallet/config",
+    summary: "Get wallet signer bridge config (non-secret)",
+    auth: "bearer",
+    responses: {
+      200: "Wallet config payload",
+      401: "Missing or invalid API key"
+    }
+  },
+  {
+    method: "POST",
+    path: "/v1/wallet/config",
+    summary: "Update wallet signer bridge config",
+    auth: "bearer",
+    responses: {
+      200: "Wallet config update payload",
+      401: "Missing or invalid API key"
+    }
+  },
+  {
+    method: "GET",
+    path: "/v1/wallet/address",
+    summary: "Get active signer wallet address",
+    auth: "bearer",
+    responses: {
+      200: "Wallet address payload",
+      400: "Wallet bridge disabled",
+      401: "Missing or invalid API key",
+      502: "Signer unavailable"
+    }
+  },
+  {
+    method: "GET",
+    path: "/v1/wallet/balance",
+    summary: "Get active signer wallet balances",
+    auth: "bearer",
+    responses: {
+      200: "Wallet balance payload",
+      400: "Wallet bridge disabled",
+      401: "Missing or invalid API key",
+      502: "Signer unavailable"
+    }
+  },
+  {
+    method: "GET",
+    path: "/v1/wallet/policy",
+    summary: "Get signer policy controls/limits",
+    auth: "bearer",
+    responses: {
+      200: "Wallet policy payload",
+      400: "Wallet bridge disabled",
+      401: "Missing or invalid API key",
+      502: "Signer unavailable"
+    }
+  },
+  {
+    method: "POST",
+    path: "/v1/wallet/send",
+    summary: "Send transaction via wallet signer",
+    auth: "bearer",
+    responses: {
+      200: "Transaction result",
+      400: "Wallet bridge disabled",
+      401: "Missing or invalid API key",
+      502: "Signer unavailable"
+    }
+  },
+  {
+    method: "POST",
+    path: "/v1/wallet/sign-message",
+    summary: "Sign plaintext message via wallet signer",
+    auth: "bearer",
+    responses: {
+      200: "Message signature payload",
+      400: "Wallet bridge disabled",
+      401: "Missing or invalid API key",
+      502: "Signer unavailable"
+    }
+  },
+  {
+    method: "POST",
+    path: "/v1/wallet/sign-typed-data",
+    summary: "Sign EIP-712 typed data via wallet signer",
+    auth: "bearer",
+    responses: {
+      200: "Typed data signature payload",
+      400: "Wallet bridge disabled",
+      401: "Missing or invalid API key",
+      502: "Signer unavailable"
+    }
+  },
+  {
+    method: "POST",
+    path: "/wallet/mcp",
+    summary: "Local MCP bridge for wallet tools (used by model tool-calls)",
+    responses: {
+      200: "JSON-RPC result/error"
+    }
+  },
+  {
+    method: "GET",
     path: "/v1/app/meta",
     summary: "App bootstrap metadata and route inventory",
     auth: "bearer",

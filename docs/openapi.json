@@ -346,6 +346,212 @@
         ]
       }
     },
+    "/v1/wallet/health": {
+      "get": {
+        "summary": "Wallet signer health/config status",
+        "responses": {
+          "200": {
+            "description": "Wallet health payload"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/wallet/config": {
+      "get": {
+        "summary": "Get wallet signer bridge config (non-secret)",
+        "responses": {
+          "200": {
+            "description": "Wallet config payload"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Update wallet signer bridge config",
+        "responses": {
+          "200": {
+            "description": "Wallet config update payload"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/wallet/address": {
+      "get": {
+        "summary": "Get active signer wallet address",
+        "responses": {
+          "200": {
+            "description": "Wallet address payload"
+          },
+          "400": {
+            "description": "Wallet bridge disabled"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          },
+          "502": {
+            "description": "Signer unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/wallet/balance": {
+      "get": {
+        "summary": "Get active signer wallet balances",
+        "responses": {
+          "200": {
+            "description": "Wallet balance payload"
+          },
+          "400": {
+            "description": "Wallet bridge disabled"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          },
+          "502": {
+            "description": "Signer unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/wallet/policy": {
+      "get": {
+        "summary": "Get signer policy controls/limits",
+        "responses": {
+          "200": {
+            "description": "Wallet policy payload"
+          },
+          "400": {
+            "description": "Wallet bridge disabled"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          },
+          "502": {
+            "description": "Signer unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/wallet/send": {
+      "post": {
+        "summary": "Send transaction via wallet signer",
+        "responses": {
+          "200": {
+            "description": "Transaction result"
+          },
+          "400": {
+            "description": "Wallet bridge disabled"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          },
+          "502": {
+            "description": "Signer unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/wallet/sign-message": {
+      "post": {
+        "summary": "Sign plaintext message via wallet signer",
+        "responses": {
+          "200": {
+            "description": "Message signature payload"
+          },
+          "400": {
+            "description": "Wallet bridge disabled"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          },
+          "502": {
+            "description": "Signer unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/wallet/sign-typed-data": {
+      "post": {
+        "summary": "Sign EIP-712 typed data via wallet signer",
+        "responses": {
+          "200": {
+            "description": "Typed data signature payload"
+          },
+          "400": {
+            "description": "Wallet bridge disabled"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          },
+          "502": {
+            "description": "Signer unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/wallet/mcp": {
+      "post": {
+        "summary": "Local MCP bridge for wallet tools (used by model tool-calls)",
+        "responses": {
+          "200": {
+            "description": "JSON-RPC result/error"
+          }
+        }
+      }
+    },
     "/v1/app/meta": {
       "get": {
         "summary": "App bootstrap metadata and route inventory",

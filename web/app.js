@@ -68,6 +68,11 @@
       defaultRoute: "local"
     },
     portConfig: { host: "127.0.0.1", port: 11435 },
+    walletConfig: {
+      enabled: false,
+      baseUrl: "http://127.0.0.1:18790",
+      tokenConfigured: false
+    },
   };
 
   // ---------------------------------------------------------------------------
@@ -741,6 +746,90 @@
       });
   }
 
+  async function loadWalletConfig() {
+    try {
+      const config = await api("GET", "/v1/wallet/config");
+      state.walletConfig = {
+        enabled: !!config.enabled,
+        baseUrl: config.baseUrl || "http://127.0.0.1:18790",
+        tokenConfigured: !!config.tokenConfigured
+      };
+
+      const enabledEl = $("#wallet-enabled");
+      const baseUrlEl = $("#wallet-base-url");
+      if (enabledEl) enabledEl.checked = !!state.walletConfig.enabled;
+      if (baseUrlEl) baseUrlEl.value = state.walletConfig.baseUrl;
+    } catch {
+      // silent
+    }
+  }
+
+  async function refreshWalletHealth() {
+    const statusEl = $("#wallet-status");
+    try {
+      const health = await api("GET", "/v1/wallet/health");
+      if (!statusEl) return;
+
+      if (!health.enabled) {
+        statusEl.textContent = "Wallet status: disabled";
+        statusEl.style.color = "var(--text-muted)";
+        return;
+      }
+
+      const online = !!health.online;
+      const address = health.address ? String(health.address).slice(0, 8) + "…" + String(health.address).slice(-6) : "n/a";
+      statusEl.textContent = online
+        ? `Wallet status: online • ${address}`
+        : `Wallet status: offline • ${health.error || "signer unavailable"}`;
+      statusEl.style.color = online ? "var(--status-on)" : "#fca5a5";
+    } catch (err) {
+      if (!statusEl) return;
+      statusEl.textContent = `Wallet status: error • ${err.message}`;
+      statusEl.style.color = "#fca5a5";
+    }
+  }
+
+  function initWalletSettings() {
+    const saveBtn = $("#wallet-save-btn");
+    const refreshBtn = $("#wallet-refresh-btn");
+    const tokenToggle = $("#wallet-token-visibility");
+
+    tokenToggle?.addEventListener("click", () => {
+      const tokenInput = $("#wallet-token");
+      if (!tokenInput) return;
+      tokenInput.type = tokenInput.type === "password" ? "text" : "password";
+    });
+
+    refreshBtn?.addEventListener("click", () => {
+      refreshWalletHealth();
+    });
+
+    saveBtn?.addEventListener("click", async () => {
+      const enabled = !!$("#wallet-enabled")?.checked;
+      const baseUrl = $("#wallet-base-url")?.value?.trim() || "http://127.0.0.1:18790";
+      const token = $("#wallet-token")?.value?.trim() || undefined;
+
+      try {
+        const saved = await api("POST", "/v1/wallet/config", {
+          enabled,
+          baseUrl,
+          ...(token !== undefined ? { token } : {})
+        });
+
+        state.walletConfig = {
+          enabled: !!saved.enabled,
+          baseUrl: saved.baseUrl || baseUrl,
+          tokenConfigured: !!saved.tokenConfigured
+        };
+
+        toast("Wallet settings saved.");
+        await refreshWalletHealth();
+      } catch (err) {
+        toast(`Failed to save wallet settings: ${err.message}`, "error");
+      }
+    });
+  }
+
   // ---------------------------------------------------------------------------
   // Tree toggle
   // ---------------------------------------------------------------------------
@@ -764,22 +853,26 @@
     initImportOllamaButton();
     initBankrSettings();
     initPortService();
+    initWalletSettings();
     initTreeToggles();
 
     // Load data in parallel
     await Promise.allSettled([
       loadBankrConfig(),
+      loadWalletConfig(),
       loadModels(),
       loadMcpServers(),
       loadRuntimeStatus(),
       loadUsage(),
       refreshBankrUsage(),
+      refreshWalletHealth(),
     ]);
 
     // Periodic refresh (every 30s)
     setInterval(() => {
       loadModels();
       loadRuntimeStatus();
+      refreshWalletHealth();
     }, 30000);
   }
 

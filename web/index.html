@@ -207,6 +207,35 @@
               <button type="button" class="section-btn" id="apply-port-btn">Apply + Restart Runtime</button>
             </div>
           </div>
+
+          <div class="runtime-service" id="wallet-service">
+            <h4>WALLET SIGNER BRIDGE (BETA)</h4>
+            <div class="toggle-row">
+              <span>Enable wallet control</span>
+              <label class="switch">
+                <input id="wallet-enabled" type="checkbox" />
+                <span></span>
+              </label>
+            </div>
+            <label class="field" style="margin:0">
+              <span>Signer Base URL</span>
+              <input id="wallet-base-url" type="text" value="http://127.0.0.1:18790" />
+            </label>
+            <label class="field" style="margin:0">
+              <span>Signer Token</span>
+              <div class="secure-input">
+                <input id="wallet-token" type="password" value="" placeholder="Bearer token" />
+                <button type="button" class="icon-button" id="wallet-token-visibility" aria-label="Toggle token visibility">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6c5.3 0 9.3 5 9.8 5.6l.2.3-.2.3C21.3 12.9 17.3 18 12 18S2.7 12.9 2.2 12.2L2 12l.2-.3C2.7 11 6.7 6 12 6zm0 2c-3.5 0-6.4 2.9-7.6 4 1.2 1.1 4.1 4 7.6 4s6.4-2.9 7.6-4c-1.2-1.1-4.1-4-7.6-4zm0 1.8a2.2 2.2 0 1 1 0 4.4 2.2 2.2 0 0 1 0-4.4z" /></svg>
+                </button>
+              </div>
+            </label>
+            <p class="port-status" id="wallet-status">Wallet status: unknown</p>
+            <div class="port-actions">
+              <button type="button" class="section-btn" id="wallet-refresh-btn">Refresh Wallet</button>
+              <button type="button" class="section-btn" id="wallet-save-btn">Save Wallet Settings</button>
+            </div>
+          </div>
         </section>
 
         <section class="settings-card">

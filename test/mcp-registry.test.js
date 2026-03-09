@@ -31,7 +31,7 @@ test("registry loads preconfigured servers by default", async () => {
   const servers = await registry.list();
   const names = servers.map((server) => server.name);
 
-  assert.deepEqual(names.sort(), ["CoinGecko", "DefiLlama", "DexScreener", "Etherscan"].sort());
+  assert.deepEqual(names.sort(), ["CoinGecko", "Darksol Wallet", "DefiLlama", "DexScreener", "Etherscan"].sort());
   assert.ok(servers.every((server) => server.enabled === false));
 });
 
