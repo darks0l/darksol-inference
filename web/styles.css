@@ -1,15 +1,20 @@
 :root {
+  /* Synced to landing palette */
   --bg: #0d0d14;
   --surface: #13131d;
   --surface-elevated: #1a1a28;
+  --input: #222233;
+  --border: #2a2a3d;
+
   --primary: #7c3aed;
   --primary-light: #a855f7;
+  --primary-deep: #5b21b6;
+  --primary-glow: rgba(124, 58, 237, 0.2);
+
   --text: #e0e0ee;
   --text-muted: #8888a8;
   --status-on: #22c55e;
   --status-off: #555570;
-  --border: #2a2a3d;
-  --input: #222233;
 }
 
 *,
@@ -84,19 +89,17 @@ select {
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  display: grid;
-  place-items: center;
-  background: linear-gradient(145deg, var(--primary-light), var(--primary));
-  color: #fff;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  box-shadow: 0 10px 24px rgba(124, 58, 237, 0.28);
   margin-bottom: 7px;
 }
 
 .brand-text {
   margin: 0;
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-muted);
+  letter-spacing: 0.02em;
 }
 
 .icon-menu {

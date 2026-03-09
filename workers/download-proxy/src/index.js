@@ -2,7 +2,6 @@
 // Routes: /desktop/<version>/<filename> → GitLab Generic Packages
 // Adds auth, streams file, sets Content-Disposition for direct download.
 
-const ALLOWED_PACKAGES = ["darksol-desktop"];
 const GITLAB_API = "https://gitlab.com/api/v4";
 
 export default {

@@ -9,6 +9,7 @@ import { pollBackendHealth, probeBackendHealth, spawnBackendProcess } from "./ba
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const preloadPath = path.resolve(__dirname, "preload.js");
+const appLogoPath = path.resolve(__dirname, "../config/logo.png");
 
 let mainWindow;
 let backendChildProcess = null;
@@ -77,6 +78,8 @@ function createWindow(config) {
     minWidth: config.window.minWidth,
     minHeight: config.window.minHeight,
     autoHideMenuBar: true,
+    icon: appLogoPath,
+    backgroundColor: "#0d0d14",
     webPreferences: {
       preload: preloadPath,
       contextIsolation: true,
@@ -134,6 +137,9 @@ async function bootstrap() {
   desktopConfig = await loadConfig();
   app.setName(desktopConfig.appName);
   await app.whenReady();
+  if (process.platform === "darwin" && app.dock?.setIcon) {
+    app.dock.setIcon(appLogoPath);
+  }
   registerIpcHandlers(desktopConfig);
   await ensureBackendOnline(desktopConfig);
   createWindow(desktopConfig);
