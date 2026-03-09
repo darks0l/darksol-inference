@@ -315,6 +315,40 @@ export const ROUTE_CONTRACT = [
   },
   {
     method: "POST",
+    path: "/v1/wallet/confirm",
+    summary: "Confirm a pending wallet write operation",
+    auth: "bearer",
+    responses: {
+      200: "Confirmed action result",
+      400: "Missing confirmationId",
+      401: "Missing or invalid API key",
+      404: "Confirmation not found or expired"
+    }
+  },
+  {
+    method: "POST",
+    path: "/v1/wallet/reject",
+    summary: "Reject a pending wallet write operation",
+    auth: "bearer",
+    responses: {
+      200: "Rejection acknowledgement",
+      400: "Missing confirmationId",
+      401: "Missing or invalid API key",
+      404: "Confirmation not found or expired"
+    }
+  },
+  {
+    method: "GET",
+    path: "/v1/wallet/pending",
+    summary: "List pending wallet confirmations",
+    auth: "bearer",
+    responses: {
+      200: "Pending confirmations list",
+      401: "Missing or invalid API key"
+    }
+  },
+  {
+    method: "POST",
     path: "/wallet/mcp",
     summary: "Local MCP bridge for wallet tools (used by model tool-calls)",
     responses: {

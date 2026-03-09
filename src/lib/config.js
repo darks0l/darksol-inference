@@ -23,7 +23,8 @@ const defaultConfig = {
   keepWarmIntervalSec: 120,
   walletEnabled: false,
   walletSignerBaseUrl: "http://127.0.0.1:18790",
-  walletSignerToken: null
+  walletSignerToken: null,
+  walletAutoConfirm: false
 };
 
 function resolveConfigPath(options = {}) {

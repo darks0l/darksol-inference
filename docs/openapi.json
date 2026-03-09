@@ -542,6 +542,72 @@
         ]
       }
     },
+    "/v1/wallet/confirm": {
+      "post": {
+        "summary": "Confirm a pending wallet write operation",
+        "responses": {
+          "200": {
+            "description": "Confirmed action result"
+          },
+          "400": {
+            "description": "Missing confirmationId"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          },
+          "404": {
+            "description": "Confirmation not found or expired"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/wallet/reject": {
+      "post": {
+        "summary": "Reject a pending wallet write operation",
+        "responses": {
+          "200": {
+            "description": "Rejection acknowledgement"
+          },
+          "400": {
+            "description": "Missing confirmationId"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          },
+          "404": {
+            "description": "Confirmation not found or expired"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/wallet/pending": {
+      "get": {
+        "summary": "List pending wallet confirmations",
+        "responses": {
+          "200": {
+            "description": "Pending confirmations list"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/wallet/mcp": {
       "post": {
         "summary": "Local MCP bridge for wallet tools (used by model tool-calls)",

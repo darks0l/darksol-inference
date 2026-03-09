@@ -71,7 +71,8 @@
     walletConfig: {
       enabled: false,
       baseUrl: "http://127.0.0.1:18790",
-      tokenConfigured: false
+      tokenConfigured: false,
+      autoConfirm: false
     },
   };
 
@@ -752,13 +753,16 @@
       state.walletConfig = {
         enabled: !!config.enabled,
         baseUrl: config.baseUrl || "http://127.0.0.1:18790",
-        tokenConfigured: !!config.tokenConfigured
+        tokenConfigured: !!config.tokenConfigured,
+        autoConfirm: !!config.autoConfirm
       };
 
       const enabledEl = $("#wallet-enabled");
       const baseUrlEl = $("#wallet-base-url");
+      const autoConfirmEl = $("#wallet-auto-confirm");
       if (enabledEl) enabledEl.checked = !!state.walletConfig.enabled;
       if (baseUrlEl) baseUrlEl.value = state.walletConfig.baseUrl;
+      if (autoConfirmEl) autoConfirmEl.checked = !!state.walletConfig.autoConfirm;
     } catch {
       // silent
     }
@@ -808,18 +812,21 @@
       const enabled = !!$("#wallet-enabled")?.checked;
       const baseUrl = $("#wallet-base-url")?.value?.trim() || "http://127.0.0.1:18790";
       const token = $("#wallet-token")?.value?.trim() || undefined;
+      const autoConfirm = !!$("#wallet-auto-confirm")?.checked;
 
       try {
         const saved = await api("POST", "/v1/wallet/config", {
           enabled,
           baseUrl,
+          autoConfirm,
           ...(token !== undefined ? { token } : {})
         });
 
         state.walletConfig = {
           enabled: !!saved.enabled,
           baseUrl: saved.baseUrl || baseUrl,
-          tokenConfigured: !!saved.tokenConfigured
+          tokenConfigured: !!saved.tokenConfigured,
+          autoConfirm: !!saved.autoConfirm
         };
 
         toast("Wallet settings saved.");
