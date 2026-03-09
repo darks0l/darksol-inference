@@ -42,8 +42,20 @@
         "to": "backend/src"
       },
       {
+        "from": "../web",
+        "to": "backend/web"
+      },
+      {
+        "from": "../assets/icons",
+        "to": "backend/assets/icons"
+      },
+      {
         "from": "../package.json",
         "to": "backend/package.json"
+      },
+      {
+        "from": "../node_modules",
+        "to": "backend/node_modules"
       }
     ],
     "win": {

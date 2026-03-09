@@ -1,18 +1,20 @@
-import si from "systeminformation";
+import { getTemperatures } from "gpu-orchestrator/src/lib/thermal.js";
 
 export async function getThermalStatus() {
   try {
-    const temp = await si.cpuTemperature();
+    const temps = await getTemperatures();
     return {
-      main: temp.main || null,
-      cores: temp.cores || [],
-      max: temp.max || null
+      main: temps.cpu?.temp || null,
+      cores: [],
+      max: temps.cpu?.max || null,
+      gpus: temps.gpus || []
     };
   } catch {
     return {
       main: null,
       cores: [],
-      max: null
+      max: null,
+      gpus: []
     };
   }
 }

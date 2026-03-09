@@ -1,5 +1,8 @@
 import os from "node:os";
-import si from "systeminformation";
+import { getSystemSnapshot, detectVendors } from "gpu-orchestrator/src/lib/system.js";
+import { computeVramCaps } from "gpu-orchestrator/src/lib/vram.js";
+import { detectBackends, recommendBackend } from "gpu-orchestrator/src/lib/backends.js";
+import { recommendByHardware } from "gpu-orchestrator/src/lib/profiles.js";
 import { getLlamaInstance } from "../engine/loader.js";
 
 async function detectLlamaRuntime() {
@@ -29,15 +32,17 @@ async function detectLlamaRuntime() {
 }
 
 export async function detectHardware() {
-  const [cpu, mem, graphics, osInfo, llamaRuntime] = await Promise.all([
-    si.cpu(),
-    si.mem(),
-    si.graphics(),
-    si.osInfo(),
+  // Use gpu-orchestrator for comprehensive system snapshot
+  const [snapshot, llamaRuntime] = await Promise.all([
+    getSystemSnapshot(),
     detectLlamaRuntime()
   ]);
 
-  const gpus = (graphics.controllers || []).map((gpu) => ({
+  const cpu = snapshot.cpu;
+  const mem = snapshot.mem;
+  const osInfo = snapshot.osInfo;
+
+  const gpus = (snapshot.graphics?.controllers || []).map((gpu) => ({
     vendor: gpu.vendor || "unknown",
     model: gpu.model || "unknown",
     vramMb: gpu.vram || 0,
@@ -49,6 +54,18 @@ export async function detectHardware() {
   const freeVramMbFromLlama = llamaRuntime.vram ? Math.round(llamaRuntime.vram.free / (1024 * 1024)) : 0;
   const totalVramMb = Math.max(totalVramMbFromSystem, totalVramMbFromLlama);
   const cpuMathCores = llamaRuntime.cpuMathCores || cpu.physicalCores || Math.max(Math.floor(os.cpus().length / 2), 1);
+
+  // gpu-orchestrator enrichments
+  const vendors = detectVendors(snapshot);
+  const backends = detectBackends(snapshot);
+  const backendRecommendation = recommendBackend(snapshot, backends);
+  const vramCaps = computeVramCaps({ snapshot, policy: "balanced" });
+  const recommendedProfile = recommendByHardware({
+    vendors,
+    totalMemGb: Math.round(mem.total / (1024 * 1024 * 1024)),
+    vramGb: Math.round(totalVramMb / 1024),
+    coreCount: cpu.physicalCores || Math.max(Math.floor(os.cpus().length / 2), 1)
+  });
 
   return {
     platform: osInfo.platform,
@@ -69,6 +86,14 @@ export async function detectHardware() {
     totalVramMb,
     freeVramMb: freeVramMbFromLlama,
     hasGpu: gpus.length > 0 || llamaRuntime.backend !== false,
-    llama: llamaRuntime
+    llama: llamaRuntime,
+    // gpu-orchestrator enrichments
+    orchestrator: {
+      vendors,
+      backends,
+      backendRecommendation,
+      vramCaps,
+      recommendedProfile
+    }
   };
 }
