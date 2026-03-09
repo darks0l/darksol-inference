@@ -258,6 +258,112 @@
         ]
       }
     },
+    "/v1/runtime/status": {
+      "get": {
+        "summary": "Darksol Engine runtime status plus keep-warm state",
+        "responses": {
+          "200": {
+            "description": "Runtime status payload"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/runtime/start": {
+      "post": {
+        "summary": "Start managed Darksol Engine runtime",
+        "responses": {
+          "200": {
+            "description": "Runtime start result"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/runtime/stop": {
+      "post": {
+        "summary": "Stop managed Darksol Engine runtime",
+        "responses": {
+          "200": {
+            "description": "Runtime stop result"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/runtime/restart": {
+      "post": {
+        "summary": "Restart managed Darksol Engine runtime",
+        "responses": {
+          "200": {
+            "description": "Runtime restart result"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/runtime/keepwarm": {
+      "get": {
+        "summary": "Get Darksol Engine keep-warm configuration",
+        "responses": {
+          "200": {
+            "description": "Keep-warm configuration payload"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Update Darksol Engine keep-warm configuration",
+        "responses": {
+          "200": {
+            "description": "Keep-warm update result"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/v1/mcp/servers": {
       "get": {
         "summary": "List configured MCP servers",

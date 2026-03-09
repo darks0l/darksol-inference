@@ -167,6 +167,66 @@ export const ROUTE_CONTRACT = [
   },
   {
     method: "GET",
+    path: "/v1/runtime/status",
+    summary: "Darksol Engine runtime status plus keep-warm state",
+    auth: "bearer",
+    responses: {
+      200: "Runtime status payload",
+      401: "Missing or invalid API key"
+    }
+  },
+  {
+    method: "POST",
+    path: "/v1/runtime/start",
+    summary: "Start managed Darksol Engine runtime",
+    auth: "bearer",
+    responses: {
+      200: "Runtime start result",
+      401: "Missing or invalid API key"
+    }
+  },
+  {
+    method: "POST",
+    path: "/v1/runtime/stop",
+    summary: "Stop managed Darksol Engine runtime",
+    auth: "bearer",
+    responses: {
+      200: "Runtime stop result",
+      401: "Missing or invalid API key"
+    }
+  },
+  {
+    method: "POST",
+    path: "/v1/runtime/restart",
+    summary: "Restart managed Darksol Engine runtime",
+    auth: "bearer",
+    responses: {
+      200: "Runtime restart result",
+      401: "Missing or invalid API key"
+    }
+  },
+  {
+    method: "GET",
+    path: "/v1/runtime/keepwarm",
+    summary: "Get Darksol Engine keep-warm configuration",
+    auth: "bearer",
+    responses: {
+      200: "Keep-warm configuration payload",
+      401: "Missing or invalid API key"
+    }
+  },
+  {
+    method: "POST",
+    path: "/v1/runtime/keepwarm",
+    summary: "Update Darksol Engine keep-warm configuration",
+    auth: "bearer",
+    responses: {
+      200: "Keep-warm update result",
+      401: "Missing or invalid API key"
+    }
+  },
+  {
+    method: "GET",
     path: "/v1/mcp/servers",
     summary: "List configured MCP servers",
     auth: "bearer",

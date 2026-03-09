@@ -12,10 +12,13 @@ import { registerDirectoryRoutes } from "./routes/directory.js";
 import { registerBankrRoutes } from "./routes/bankr.js";
 import { registerAppRoutes } from "./routes/app.js";
 import { registerMcpRoutes } from "./routes/mcp.js";
+import { registerRuntimeRoutes } from "./routes/runtime.js";
 import { logger } from "../lib/logger.js";
 import { loadConfig } from "../lib/config.js";
 import { createOllamaClient } from "../providers/ollama.js";
 import { createProviderInvoker, createRequestQueue } from "./inference-controls.js";
+import { getRuntimeManager } from "../runtime/manager.js";
+import { getKeepWarmScheduler } from "../runtime/keep-warm.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -46,7 +49,9 @@ export async function buildServer({
   readUsageStatsFn,
   recordInferenceUsageFn,
   mcpRegistry,
-  mcpExecutor
+  mcpExecutor,
+  runtimeManager,
+  keepWarmScheduler
 } = {}) {
   const runtimeConfig = await loadConfig();
   const resolvedOllamaEnabled = ollamaEnabled ?? runtimeConfig.ollamaEnabled;
@@ -67,6 +72,8 @@ export async function buildServer({
       retryCount: resolvedProviderRetryCount,
       timers
     });
+  const resolvedRuntimeManager = runtimeManager || getRuntimeManager();
+  const resolvedKeepWarmScheduler = keepWarmScheduler || getKeepWarmScheduler();
 
   const fastify = Fastify({ logger: false });
   const authMiddleware = createAuthMiddleware({ apiKey });
@@ -102,6 +109,10 @@ export async function buildServer({
   await registerDirectoryRoutes(fastify, { fetchImpl, detectHardwareFn });
   await registerBankrRoutes(fastify);
   await registerMcpRoutes(fastify, { mcpRegistry });
+  await registerRuntimeRoutes(fastify, {
+    runtimeManager: resolvedRuntimeManager,
+    keepWarmScheduler: resolvedKeepWarmScheduler
+  });
   await registerAppRoutes(fastify, { readUsageStats: readUsageStatsFn });
   await registerChatRoutes(fastify, {
     ollamaClient,
@@ -140,7 +151,9 @@ export async function startServer({
   readUsageStatsFn,
   recordInferenceUsageFn,
   mcpRegistry,
-  mcpExecutor
+  mcpExecutor,
+  runtimeManager,
+  keepWarmScheduler
 } = {}) {
   const server = await buildServer({
     apiKey,
@@ -158,9 +171,14 @@ export async function startServer({
     readUsageStatsFn,
     recordInferenceUsageFn,
     mcpRegistry,
-    mcpExecutor
+    mcpExecutor,
+    runtimeManager,
+    keepWarmScheduler
   });
   await server.listen({ host, port });
+  const runtimeConfig = await loadConfig();
+  const activeKeepWarmScheduler = keepWarmScheduler || getKeepWarmScheduler();
+  await activeKeepWarmScheduler.startFromConfig(runtimeConfig);
   await logger.info("server_started", { host, port });
   return server;
 }
