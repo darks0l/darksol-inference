@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "DARKSOL Inference API",
-    "version": "0.3.0",
+    "version": "0.3.1",
     "description": "Local inference server with OpenAI-compatible endpoints and static shell assets."
   },
   "servers": [

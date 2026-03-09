@@ -85,7 +85,9 @@ test("pollBackendHealth returns timeout details when backend never becomes healt
 test("getBackendSpawnPlan prefers explicit command override", () => {
   process.env.DARKSOL_DESKTOP_BACKEND_CMD = "darksol-local";
   const plan = getBackendSpawnPlan();
-  assert.deepEqual(plan, { command: "darksol-local", args: ["serve"] });
+  assert.equal(plan.command, "darksol-local");
+  assert.deepEqual(plan.args, ["serve"]);
+  assert.equal(plan.env, process.env);
 });
 
 test("spawnBackendProcess uses resolved command and serve arg", () => {

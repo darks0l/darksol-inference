@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -64,26 +65,55 @@ function getDevCliEntrypoint() {
   return path.resolve(__dirname, "../../bin/darksol.js");
 }
 
+function getBundledCliEntrypoint() {
+  if (!process.resourcesPath) {
+    return null;
+  }
+
+  return path.join(process.resourcesPath, "backend", "bin", "darksol.js");
+}
+
+function isPackagedDesktopRuntime() {
+  return Boolean(process.resourcesPath) && !process.defaultApp;
+}
+
 export function getBackendSpawnPlan() {
   if (process.env.DARKSOL_DESKTOP_BACKEND_CMD) {
-    return { command: process.env.DARKSOL_DESKTOP_BACKEND_CMD, args: ["serve"] };
+    return { command: process.env.DARKSOL_DESKTOP_BACKEND_CMD, args: ["serve"], env: process.env };
   }
 
   if (process.env.DARKSOL_DESKTOP_BACKEND_NODE) {
     return {
       command: process.env.DARKSOL_DESKTOP_BACKEND_NODE,
-      args: [getDevCliEntrypoint(), "serve"]
+      args: [getDevCliEntrypoint(), "serve"],
+      env: process.env
     };
   }
 
-  return { command: "darksol", args: ["serve"] };
+  if (isPackagedDesktopRuntime()) {
+    const bundledCliEntrypoint = getBundledCliEntrypoint();
+    if (!bundledCliEntrypoint || !fs.existsSync(bundledCliEntrypoint)) {
+      throw new Error(`Bundled backend entrypoint not found at ${bundledCliEntrypoint}`);
+    }
+
+    return {
+      command: process.execPath,
+      args: [bundledCliEntrypoint, "serve"],
+      env: {
+        ...process.env,
+        ELECTRON_RUN_AS_NODE: "1"
+      }
+    };
+  }
+
+  return { command: "darksol", args: ["serve"], env: process.env };
 }
 
 export function spawnBackendProcess(spawnImpl = spawn) {
   const plan = getBackendSpawnPlan();
 
   return spawnImpl(plan.command, plan.args, {
-    env: process.env,
+    env: plan.env,
     stdio: "pipe",
     windowsHide: true
   });

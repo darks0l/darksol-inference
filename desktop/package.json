@@ -1,7 +1,7 @@
 {
   "name": "@darksol/desktop-shell",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "DARKSOL Inference desktop shell",
   "type": "module",
   "main": "src/main.js",
@@ -32,6 +32,18 @@
       {
         "from": "../package.json",
         "to": "app-package.json"
+      },
+      {
+        "from": "../bin",
+        "to": "backend/bin"
+      },
+      {
+        "from": "../src",
+        "to": "backend/src"
+      },
+      {
+        "from": "../package.json",
+        "to": "backend/package.json"
       }
     ],
     "win": {

@@ -1,11 +1,12 @@
 {
   "name": "darksol",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Local-first LLM inference engine with OpenAI-compatible API, MCP tools, and hardware-aware optimization",
   "main": "src/cli.js",
   "type": "module",
   "bin": {
-    "darksol": "bin/darksol.js"
+    "darksol": "bin/darksol.js",
+    "darksol-studio": "bin/darksol.js"
   },
   "files": [
     "bin/",

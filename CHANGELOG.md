@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1
+- Added CLI alias `darksol-studio` while keeping install and package name unchanged (`npm i -g darksol`).
+- Updated docs + landing examples to prefer `darksol-studio ...` commands and note `darksol ...` remains supported.
+- Desktop backend boot hardening: packaged app now prioritizes bundled backend entrypoint and avoids PATH-dependent `spawn darksol ENOENT` failures.
+- Desktop installer packaging now includes backend CLI/runtime resources under `resources/backend/*`.
+
 ## 0.3.0
 - **Bankr LLM Gateway — full integration.** Real client for Bankr's OpenAI-compatible cloud gateway (`https://llm.bankr.bot`): model listing, usage summaries, streaming chat completions with SSE passthrough, and cost tracking. New API routes: `GET/POST /v1/bankr/config`, `GET /v1/bankr/models`, `GET /v1/bankr/usage`. Chat router supports `bankr/<model>` ids, explicit `route: "bankr"`, and config-based default route (`local`/`bankr`). Settings UI wired with enable toggle, base URL, API key, default route selector, save + usage refresh.
 - **Ollama import UI.** New "Import from Ollama" modal in Models panel — multi-select your existing Ollama models and import them into Darksol via zero-copy hardlink (recommended) or full copy. New API: `POST /v1/models/import-ollama`.

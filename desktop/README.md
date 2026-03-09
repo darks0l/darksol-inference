@@ -9,7 +9,7 @@ Electron-based desktop shell that loads the local web UI and ensures a local DAR
 - Backend lifecycle helper: `src/backend.js`
 - Desktop config: `config/desktop.config.json`
 
-On startup, desktop probes `${apiBaseUrl}/health`. If offline, it spawns `darksol serve`, waits for health with timeout polling, and surfaces a useful error dialog on failure. If desktop started that backend process, it is terminated on app quit.
+On startup, desktop probes `${apiBaseUrl}/health`. If offline, it spawns the bundled backend (`darksol-studio serve`/`darksol serve`), waits for health with timeout polling, and surfaces a useful error dialog on failure. If desktop started that backend process, it is terminated on app quit.
 
 ## Scripts
 

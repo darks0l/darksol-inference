@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Darksol Studio — Local AI Inference Engine</title>
-  <meta name="description" content="Run LLMs locally with automatic hardware optimization. Desktop app, OpenAI-compatible API, MCP tools, Ollama model reuse. Free forever.">
+  <meta name="description" content="Run LLMs locally with hardware-aware optimization. Desktop app, OpenAI-compatible API, MCP tools, Ollama model reuse, and optional Bankr cloud routing.">
   <meta property="og:title" content="Darksol Studio">
   <meta property="og:description" content="Local-first LLM inference engine. Your models, your hardware, your rules.">
   <meta property="og:type" content="website">
@@ -344,9 +344,9 @@
 
     .compare-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(3, 1fr);
       gap: 20px;
-      max-width: 800px;
+      max-width: 1120px;
       margin: 0 auto;
     }
 
@@ -509,7 +509,7 @@
   <div class="stats">
     <div class="stat-card">
       <div class="stat-value">$0.00</div>
-      <div class="stat-label">Cost per inference</div>
+      <div class="stat-label">Local inference cost</div>
     </div>
     <div class="stat-card">
       <div class="stat-value">102+</div>
@@ -620,36 +620,44 @@
 <section class="comparison">
   <div class="container">
     <div class="section-header">
-      <h2>Darksol vs Ollama</h2>
-      <p>Same goal, different approach.</p>
+      <h2>Darksol vs Ollama vs LM Studio</h2>
+      <p>All three are strong local-AI options — here’s where each one wins.</p>
     </div>
     <div class="compare-grid">
       <div class="compare-col ours">
         <h3>Darksol Studio</h3>
         <ul>
-          <li>Hardware-optimized from birth</li>
-          <li>Reuses existing Ollama models</li>
-          <li>HuggingFace directory built in</li>
-          <li>MCP tool integration</li>
-          <li>Cost tracking & savings</li>
-          <li>Desktop app + web UI + CLI</li>
-          <li>Cloud gateway fallback (Bankr) + wallet signer bridge</li>
-          <li>"Will it fit?" before download</li>
-          <li>Function calling & code execution</li>
+          <li>Hardware-aware tuning + fit checks before download</li>
+          <li>Reuses existing Ollama-local GGUF models</li>
+          <li>Desktop shell + web UI + CLI</li>
+          <li>OpenAI-compatible API + MCP tool integration</li>
+          <li>Usage + cost tracking in one place</li>
+          <li>Local-first with optional Bankr cloud route</li>
+          <li>Wallet signer bridge (beta)</li>
         </ul>
       </div>
       <div class="compare-col them">
         <h3>Ollama</h3>
         <ul>
-          <li>Basic hardware detection</li>
-          <li>Own model format only</li>
-          <li>Manual model discovery</li>
-          <li>No tool integration</li>
-          <li>No cost awareness</li>
-          <li>CLI only</li>
-          <li>Local only, no fallback</li>
-          <li>Download first, find out after</li>
-          <li>No function calling</li>
+          <li>Mature local model runtime with broad model support</li>
+          <li>Great CLI + local API workflow</li>
+          <li>GUI options exist (official/community frontends)</li>
+          <li>Strong ecosystem and integrations</li>
+          <li>No built-in MCP control panel in core runtime</li>
+          <li>No native cloud fallback routing in core runtime</li>
+          <li>No native per-run cost dashboard in core runtime</li>
+        </ul>
+      </div>
+      <div class="compare-col them">
+        <h3>LM Studio</h3>
+        <ul>
+          <li>Excellent GUI-first local chat experience</li>
+          <li>One-click model browsing/downloading UX</li>
+          <li>Local inference server mode for app integration</li>
+          <li>Great for desktop experimentation and prompt testing</li>
+          <li>Less CLI-first/automation-oriented than Darksol</li>
+          <li>No built-in Bankr-style cloud route in core app</li>
+          <li>No native MCP server control layer in core app</li>
         </ul>
       </div>
     </div>
@@ -672,25 +680,26 @@
       <div class="terminal-body">
         <div class="comment"># Install globally</div>
         <div class="cmd">$ npm i -g darksol</div>
+        <div class="output">&nbsp; Use <span class="green">darksol-studio</span> for commands (also supports <span class="green">darksol</span>)</div>
         <br>
         <div class="comment"># Search models (with hardware fit check)</div>
-        <div class="cmd">$ darksol search llama</div>
+        <div class="cmd">$ darksol-studio search llama</div>
         <div class="output">&nbsp; llama-3.2-3b-gguf&nbsp;&nbsp;&nbsp;3.2B&nbsp; Q4_K_M&nbsp; <span class="green">✅ will fit</span></div>
         <div class="output">&nbsp; llama-3.1-70b-gguf&nbsp; 70B&nbsp;&nbsp; Q4_K_M&nbsp; ❌ won't fit</div>
         <br>
         <div class="comment"># Pull and run</div>
-        <div class="cmd">$ darksol pull llama-3.2-3b-gguf</div>
+        <div class="cmd">$ darksol-studio pull llama-3.2-3b-gguf</div>
         <div class="output">&nbsp; Downloading... 100% (1.8 GB) ████████████████████ done</div>
         <br>
-        <div class="cmd">$ darksol run llama-3.2-3b "explain quantum computing"</div>
+        <div class="cmd">$ darksol-studio run llama-3.2-3b "explain quantum computing"</div>
         <div class="green">&nbsp; Quantum computing uses qubits instead of classical bits...</div>
         <br>
         <div class="comment"># Use existing Ollama models directly</div>
-        <div class="cmd">$ darksol run ollama/llama3.2 "hello world"</div>
+        <div class="cmd">$ darksol-studio run ollama/llama3.2 "hello world"</div>
         <div class="green">&nbsp; Hello! How can I help you today?</div>
         <br>
         <div class="comment"># Start the API server</div>
-        <div class="cmd">$ darksol serve</div>
+        <div class="cmd">$ darksol-studio serve</div>
         <div class="output">&nbsp; Server started at http://127.0.0.1:11435</div>
       </div>
     </div>
@@ -701,7 +710,7 @@
 <section class="cta">
   <div class="container">
     <h2>Your models. Your hardware.<br>Your rules.</h2>
-    <p>No cloud. No subscriptions. No data leaving your machine.</p>
+    <p>Local by default. Optional cloud routing only when you choose it.</p>
     <div class="hero-buttons">
       <a href="#download" class="btn btn-primary">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>

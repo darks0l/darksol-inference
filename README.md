@@ -36,40 +36,43 @@ npm i -g darksol
 
 ```bash
 # Search for models (with hardware fit check)
-darksol search llama --limit 5
+darksol-studio search llama --limit 5
 
 # Pull a model from HuggingFace
-darksol pull llama-3.2-3b-gguf
+darksol-studio pull llama-3.2-3b-gguf
 
 # Run a prompt
-darksol run llama-3.2-3b "Write a haiku about local inference."
+darksol-studio run llama-3.2-3b "Write a haiku about local inference."
 
 # Use an existing Ollama model directly
-darksol run ollama/llama3.2:latest "hello world"
+darksol-studio run ollama/llama3.2:latest "hello world"
 
 # Start the API server
-darksol serve
+darksol-studio serve
 # → http://127.0.0.1:11435
 ```
+
+> Install stays the same: `npm i -g darksol`.
+> Both command aliases work: `darksol-studio` (preferred) and `darksol`.
 
 ## CLI Commands
 
 | Command | Description |
 |---------|-------------|
-| `darksol serve` | Start the OpenAI-compatible API server |
-| `darksol run <model> <prompt>` | Run a one-shot inference |
-| `darksol pull <model>` | Download a GGUF model from HuggingFace |
-| `darksol list` | List installed models (local + Ollama) |
-| `darksol search <query>` | Search HuggingFace with hardware-aware fit |
-| `darksol ps` | Show loaded model processes |
-| `darksol status` | System and server status |
-| `darksol usage` | Show inference stats and cost tracking |
-| `darksol rm <model>` | Remove a downloaded model |
-| `darksol browse` | Interactive model browser |
-| `darksol doctor` | System diagnostics |
-| `darksol mcp list` | List MCP server registry |
-| `darksol mcp enable <name>` | Enable an MCP server |
-| `darksol mcp disable <name>` | Disable an MCP server |
+| `darksol-studio serve` | Start the OpenAI-compatible API server |
+| `darksol-studio run <model> <prompt>` | Run a one-shot inference |
+| `darksol-studio pull <model>` | Download a GGUF model from HuggingFace |
+| `darksol-studio list` | List installed models (local + Ollama) |
+| `darksol-studio search <query>` | Search HuggingFace with hardware-aware fit |
+| `darksol-studio ps` | Show loaded model processes |
+| `darksol-studio status` | System and server status |
+| `darksol-studio usage` | Show inference stats and cost tracking |
+| `darksol-studio rm <model>` | Remove a downloaded model |
+| `darksol-studio browse` | Interactive model browser |
+| `darksol-studio doctor` | System diagnostics |
+| `darksol-studio mcp list` | List MCP server registry |
+| `darksol-studio mcp enable <name>` | Enable an MCP server |
+| `darksol-studio mcp disable <name>` | Disable an MCP server |
 
 ## API Endpoints
 
@@ -132,7 +135,7 @@ Darksol supports the [Model Context Protocol](https://modelcontextprotocol.io/) 
 - **Etherscan** — Ethereum blockchain data
 - **DefiLlama** — DeFi protocol TVL and yields
 
-All servers are disabled by default. Enable them with `darksol mcp enable <name>`.
+All servers are disabled by default. Enable them with `darksol-studio mcp enable <name>` (or `darksol mcp enable <name>`).
 
 Config: `~/.darksol/mcp-servers.json`
 
