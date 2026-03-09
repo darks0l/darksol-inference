@@ -11,6 +11,8 @@ import { registerStatusCommand } from "./commands/status.js";
 import { registerSearchCommand } from "./commands/search.js";
 import { registerUsageCommand } from "./commands/usage.js";
 import { registerMcpCommand } from "./commands/mcp.js";
+import { registerRuntimeCommand } from "./commands/runtime.js";
+import { registerKeepWarmCommand } from "./commands/keepwarm.js";
 
 export function createCli(deps = {}) {
   const program = new Command();
@@ -31,6 +33,8 @@ export function createCli(deps = {}) {
   registerSearchCommand(program, deps.search);
   registerUsageCommand(program, deps.usage);
   registerMcpCommand(program, deps.mcp);
+  registerRuntimeCommand(program, deps.runtime);
+  registerKeepWarmCommand(program, deps.keepwarm);
 
   return program;
 }

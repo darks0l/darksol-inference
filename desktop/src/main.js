@@ -88,6 +88,22 @@ function createWindow(config) {
 }
 
 function registerIpcHandlers(config) {
+  async function requestEngine(pathname, { method = "GET", body } = {}) {
+    const url = `${config.apiBaseUrl.replace(/\/+$/, "")}${pathname}`;
+    const response = await fetch(url, {
+      method,
+      headers: body ? { "content-type": "application/json" } : undefined,
+      body: body ? JSON.stringify(body) : undefined
+    });
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(payload?.error?.message || `Request failed: ${response.status}`);
+    }
+
+    return payload;
+  }
+
   ipcMain.handle("desktop:get-app-meta", async () => ({
     appName: config.appName,
     appId: config.appId,
@@ -102,6 +118,15 @@ function registerIpcHandlers(config) {
       ok: false,
       error: error.message
     }))
+  );
+
+  ipcMain.handle("desktop:get-runtime-status", async () => requestEngine("/v1/runtime/status"));
+  ipcMain.handle("desktop:start-runtime", async () => requestEngine("/v1/runtime/start", { method: "POST" }));
+  ipcMain.handle("desktop:stop-runtime", async () => requestEngine("/v1/runtime/stop", { method: "POST" }));
+  ipcMain.handle("desktop:restart-runtime", async () => requestEngine("/v1/runtime/restart", { method: "POST" }));
+  ipcMain.handle("desktop:get-keepwarm", async () => requestEngine("/v1/runtime/keepwarm"));
+  ipcMain.handle("desktop:update-keepwarm", async (_event, payload = {}) =>
+    requestEngine("/v1/runtime/keepwarm", { method: "POST", body: payload })
   );
 }
 
