@@ -210,6 +210,103 @@ test("GET /v1/app/usage returns accumulated usage totals", async () => {
   );
 });
 
+test("GET /v1/runtime/status returns Darksol Engine status and keep-warm state", async () => {
+  const runtimeManager = {
+    async getStatus() {
+      return {
+        status: "running",
+        pid: 1234,
+        uptimeSec: 60,
+        port: 11435,
+        loadedModelsCount: 1
+      };
+    }
+  };
+
+  const keepWarmScheduler = {
+    getState() {
+      return {
+        active: true,
+        keepWarmEnabled: true,
+        keepWarmModel: "llama-test",
+        keepWarmIntervalSec: 120,
+        lastResult: "ok"
+      };
+    },
+    async getConfig() {
+      return {
+        keepWarmEnabled: true,
+        keepWarmModel: "llama-test",
+        keepWarmIntervalSec: 120
+      };
+    },
+    async updateConfig() {},
+    async stop() {}
+  };
+
+  await withTempServer(
+    {
+      runtimeManager,
+      keepWarmScheduler,
+      loadConfigFn: async () => ({ host: "127.0.0.1", port: 11435 })
+    },
+    async (tempBaseUrl) => {
+      const response = await fetch(`${tempBaseUrl}/v1/runtime/status`);
+      const body = await response.json();
+
+      assert.equal(response.status, 200);
+      assert.equal(body.runtime, "Darksol Engine");
+      assert.equal(body.engine.status, "running");
+      assert.equal(body.keepWarm.keepWarmModel, "llama-test");
+    }
+  );
+});
+
+test("POST /v1/runtime/keepwarm updates config using API payload", async () => {
+  const updates = [];
+  const keepWarmScheduler = {
+    getState() {
+      return {
+        active: true,
+        keepWarmEnabled: true,
+        keepWarmModel: "llama-test",
+        keepWarmIntervalSec: 180,
+        lastResult: "never"
+      };
+    },
+    async getConfig() {
+      return {
+        keepWarmEnabled: true,
+        keepWarmModel: "llama-test",
+        keepWarmIntervalSec: 180
+      };
+    },
+    async updateConfig(payload) {
+      updates.push(payload);
+      return {
+        keepWarmEnabled: true,
+        keepWarmModel: payload.model,
+        keepWarmIntervalSec: payload.interval
+      };
+    },
+    async stop() {}
+  };
+
+  await withTempServer({ keepWarmScheduler }, async (tempBaseUrl) => {
+    const response = await fetch(`${tempBaseUrl}/v1/runtime/keepwarm`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ enabled: true, model: "llama-test", interval: 180 })
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(updates, [{ enabled: true, model: "llama-test", interval: 180 }]);
+    assert.equal(body.keepWarm.model, "llama-test");
+    assert.equal(body.keepWarm.intervalSec, 180);
+  });
+});
+
 test("GET /v1/mcp/servers returns configured MCP servers", async () => {
   const registry = {
     async list() {

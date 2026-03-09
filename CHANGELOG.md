@@ -1,6 +1,12 @@
 # Changelog
 
 ## Unreleased
+- Added Darksol Engine Runtime Manager (`src/runtime/manager.js`) with managed `darksol serve` lifecycle controls (`start`, `stop`, `restart`), PID ownership at `~/.darksol/darksol.pid`, health polling, and runtime status reporting (`running/stopped`, uptime, port, loaded model count).
+- Added Darksol Engine Keep-Warm scheduler (`src/runtime/keep-warm.js`) with config-backed controls (`keepWarmEnabled`, `keepWarmModel`, `keepWarmIntervalSec`, default `120`) and periodic lightweight inference pings to keep models resident.
+- Added runtime control API routes: `GET /v1/runtime/status`, `POST /v1/runtime/start`, `POST /v1/runtime/stop`, `POST /v1/runtime/restart`, `GET /v1/runtime/keepwarm`, `POST /v1/runtime/keepwarm`.
+- Added CLI command groups for runtime and keep-warm operations: `darksol runtime status|start|stop|restart` and `darksol keepwarm status|enable --model <name> --interval <sec>|disable`.
+- Added desktop IPC bridge methods for runtime and keep-warm controls in `desktop/src/preload.js` and `desktop/src/main.js`.
+- Added deterministic test coverage for runtime manager helpers, keep-warm scheduler behavior, and keep-warm config persistence.
 
 ## 0.2.1
 - npm docs cleanup: removed npm-facing README clutter around portal/web implementation details and kept README focused on install + usage.

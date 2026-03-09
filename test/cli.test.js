@@ -7,7 +7,7 @@ test("cli registers expected commands", () => {
   const names = cli.commands.map((cmd) => cmd.name());
   assert.deepEqual(
     names.sort(),
-    ["browse", "info", "list", "mcp", "ps", "pull", "rm", "run", "search", "serve", "status", "usage"].sort()
+    ["browse", "info", "keepwarm", "list", "mcp", "ps", "pull", "rm", "run", "runtime", "search", "serve", "status", "usage"].sort()
   );
 });
 
@@ -1051,4 +1051,63 @@ test("status command reports offline server when health endpoint is unreachable"
   await cli.parseAsync(["node", "darksol", "status"]);
 
   assert.ok(logs.some((line) => line.includes("Server: offline")));
+});
+
+test("runtime status command prints Darksol Engine lifecycle status", async () => {
+  const logs = [];
+  const cli = createCli({
+    runtime: {
+      runtimeManager: {
+        async getStatus() {
+          return {
+            status: "running",
+            pid: 4321,
+            port: 11435,
+            uptimeSec: 75,
+            loadedModelsCount: 2
+          };
+        }
+      },
+      log: (line) => logs.push(line)
+    }
+  });
+
+  await cli.parseAsync(["node", "darksol", "runtime", "status"]);
+
+  assert.deepEqual(logs, [
+    "Runtime: Darksol Engine",
+    "Status: running",
+    "PID: 4321",
+    "Port: 11435",
+    "Uptime: 1m 15s",
+    "Loaded Models: 2"
+  ]);
+});
+
+test("keepwarm enable command stores model and interval", async () => {
+  const logs = [];
+  const calls = [];
+  const cli = createCli({
+    keepwarm: {
+      keepWarmScheduler: {
+        async updateConfig(payload) {
+          calls.push(payload);
+          return {
+            keepWarmEnabled: true,
+            keepWarmModel: payload.model,
+            keepWarmIntervalSec: payload.interval
+          };
+        }
+      },
+      log: (line) => logs.push(line)
+    }
+  });
+
+  await cli.parseAsync(["node", "darksol", "keepwarm", "enable", "--model", "llama-test", "--interval", "240"]);
+
+  assert.deepEqual(calls, [{ enabled: true, model: "llama-test", interval: 240 }]);
+  assert.deepEqual(logs, [
+    "Runtime: Darksol Engine",
+    "Keep-warm enabled for llama-test every 240s"
+  ]);
 });
