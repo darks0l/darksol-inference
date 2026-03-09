@@ -1,7 +1,11 @@
 {
   "platform": "win32",
-  "target": "msix-placeholder",
-  "artifactName": "darksol-inference-desktop-win",
-  "bundleId": "net.darksol.inference.win",
-  "signingProfile": "TBD"
+  "target": "nsis",
+  "artifactName": "darksol-inference-desktop-${version}-setup.${ext}",
+  "appId": "net.darksol.inference",
+  "outputDir": "desktop/dist",
+  "codeSigning": {
+    "enabled": false,
+    "notes": "Enable CSC_LINK/CSC_KEY_PASSWORD in CI for signed builds."
+  }
 }
