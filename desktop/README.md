@@ -1,23 +1,25 @@
-# Desktop Scaffold (Phase 8 Kickoff)
+# Desktop App (Phase 1 Packaging)
 
-This folder defines the non-breaking desktop app foundation.
+Electron-based desktop shell that loads the local web UI and ensures a local DARKSOL backend is available.
 
-## Scope
+## Runtime behavior
 
-- No runtime coupling to CLI/API boot path yet.
-- No heavy installer/packager dependencies yet.
-- Entry points and packaging configuration paths are reserved.
+- Main process: `src/main.js`
+- Preload bridge: `src/preload.js`
+- Backend lifecycle helper: `src/backend.js`
+- Desktop config: `config/desktop.config.json`
 
-## Entrypoints
+On startup, desktop probes `${apiBaseUrl}/health`. If offline, it spawns `darksol serve`, waits for health with timeout polling, and surfaces a useful error dialog on failure. If desktop started that backend process, it is terminated on app quit.
 
-- Main: `src/main.js`
-- Preload: `src/preload.js`
+## Scripts
 
-## Packaging Placeholders
+```bash
+# from repo root
+npm --prefix desktop install
+npm --prefix desktop run dev
+npm --prefix desktop run build:win
+```
 
-- Windows: `config/packaging.win.json`
-- macOS: `config/packaging.mac.json`
+## Installer output
 
-## Notes
-
-Future phases can wire this scaffold to an actual desktop runtime (for example Electron/Tauri) without changing current CLI/API behavior.
+- Windows NSIS installer: `desktop/dist/darksol-inference-desktop-<version>-setup.exe`

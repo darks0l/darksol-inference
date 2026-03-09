@@ -141,6 +141,25 @@ For architecture details (desktop shell + web portal implementation), see:
 
 - `docs/PHASE8_DESKTOP_WEB_ARCHITECTURE.md`
 
+### Desktop Dev + Installer (Windows)
+
+From repo root:
+
+```bash
+# install desktop runtime deps
+npm --prefix desktop install
+
+# run Electron desktop shell (auto-checks/boots local darksol backend)
+npm run desktop:dev
+
+# build Windows NSIS installer
+npm run desktop:build:win
+```
+
+Installer output path:
+
+- `desktop/dist/darksol-inference-desktop-<version>-setup.exe`
+
 The npm README stays focused on install + usage.
 
 ## License
