@@ -4,82 +4,232 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>DARKSOL Inference Workspace</title>
-    <meta name="description" content="Desktop-mirror web shell for DARKSOL Inference workflows." />
+    <meta name="description" content="Darksol Studio desktop interface." />
     <link rel="icon" type="image/png" sizes="32x32" href="../assets/icons/favicon-32x32.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="../assets/icons/apple-touch-icon.png" />
     <link rel="manifest" href="../assets/icons/site.webmanifest" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <div class="workspace" role="application" aria-label="DARKSOL desktop mirror shell">
-      <aside class="left-rail" aria-label="Main navigation">
-        <div class="brand">
-          <img src="../assets/footer-logo-darksol.png" alt="DARKSOL logo" class="logo" />
-          <div>
-            <p class="label">DARKSOL</p>
-            <h1>Inference</h1>
-          </div>
+    <div class="app-shell" role="application" aria-label="Darksol Studio desktop shell">
+      <p class="sr-only">Desktop-Mirror Web Shell</p>
+      <aside class="icon-nav" aria-label="Primary navigation">
+        <div class="brand-block">
+          <div class="brand-logo" aria-hidden="true">DS</div>
+          <p class="brand-text">Studio</p>
         </div>
 
-        <nav>
-          <a href="#" class="nav-item active">Console</a>
-          <a href="#" class="nav-item">Models</a>
-          <a href="#" class="nav-item">Sessions</a>
-          <a href="#" class="nav-item">Gateway</a>
-          <a href="#" class="nav-item">Settings</a>
+        <nav class="icon-menu">
+          <a href="#" class="icon-item active" aria-label="Home">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.5L12 5l8 6.5V20a1 1 0 0 1-1 1h-4.5v-5.5h-5V21H5a1 1 0 0 1-1-1v-8.5z" /></svg>
+          </a>
+          <a href="#" class="icon-item" aria-label="Models">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z" /></svg>
+          </a>
+          <a href="#" class="icon-item" aria-label="Settings">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.4 13a7.9 7.9 0 0 0 0-2l2-1.5-2-3.4-2.4 1a7.5 7.5 0 0 0-1.7-1l-.3-2.5h-4l-.3 2.5c-.6.2-1.2.5-1.7 1l-2.4-1-2 3.4L4.6 11a7.9 7.9 0 0 0 0 2l-2 1.5 2 3.4 2.4-1c.5.4 1.1.8 1.7 1l.3 2.5h4l.3-2.5c.6-.2 1.2-.6 1.7-1l2.4 1 2-3.4-2-1.5zM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5z" /></svg>
+          </a>
+          <a href="#" class="icon-item" aria-label="API Keys">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 14a4.5 4.5 0 1 1 3.5-7.3l7.5.1v3h-2v2h-2v2h-3.5A4.5 4.5 0 0 1 9.5 14zm0-3a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z" /></svg>
+          </a>
         </nav>
 
-        <section class="asset-note" aria-label="Branding reference">
-          <p>Branding Asset</p>
-          <img src="../assets/darksol-banner.png" alt="DARKSOL banner treatment" class="banner" />
+        <a href="#" class="icon-item exit-item" aria-label="Exit">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 7v2h-6v6h6v2H7.5V7h8zm1 3 4 2-4 2v-1.5H11v-1h5.5V10z" /></svg>
+        </a>
+      </aside>
+
+      <aside class="models-panel" aria-label="My models">
+        <header class="panel-title-row">
+          <h2>MY MODELS</h2>
+          <button type="button" class="icon-button" aria-label="Add model">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4h2v7h7v2h-7v7h-2v-7H4v-2h7z" /></svg>
+          </button>
+        </header>
+
+        <label class="search-box">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 4a6.5 6.5 0 0 1 5.1 10.6l4 4-1.4 1.4-4-4A6.5 6.5 0 1 1 10.5 4zm0 2a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9z" /></svg>
+          <input type="text" placeholder="Search models" />
+        </label>
+
+        <section class="tree-block">
+          <button type="button" class="tree-head">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 10l4 4 4-4" /></svg>
+            <span>DARKSOL CORE</span>
+          </button>
+          <button type="button" class="tree-subhead">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 10l4 4 4-4" /></svg>
+            <span>Locally managed</span>
+          </button>
+          <ul class="model-list">
+            <li class="model-item active">
+              <div class="model-meta">
+                <span class="dot online"></span>
+                <span class="model-name">darksol-chat-7b</span>
+              </div>
+              <span class="model-size">7.4 GB</span>
+            </li>
+            <li class="model-item">
+              <div class="model-meta">
+                <span class="dot online"></span>
+                <span class="model-name">darksol-coder-13b</span>
+              </div>
+              <span class="model-size">13.9 GB</span>
+            </li>
+            <li class="model-item">
+              <div class="model-meta">
+                <span class="dot offline"></span>
+                <span class="model-name">darksol-rag-lite</span>
+              </div>
+              <span class="model-size">4.1 GB</span>
+            </li>
+          </ul>
         </section>
       </aside>
 
-      <main class="center-panel" aria-label="Chat and work area">
-        <header class="panel-header">
-          <p class="eyebrow">Desktop-Mirror Web Shell</p>
-          <h2>Chat and Workflow Workspace</h2>
+      <main class="chat-panel" aria-label="Chat workspace">
+        <header class="chat-topbar">
+          <div class="chat-model">
+            <div class="avatar">M</div>
+            <div class="chat-model-copy">
+              <p class="chat-model-label">darksol-chat-7b</p>
+              <p class="chat-model-sub">Active model</p>
+            </div>
+          </div>
+          <div class="chat-actions">
+            <button type="button" class="ghost-btn">New Chat</button>
+            <button type="button" class="ghost-btn danger">Delete</button>
+          </div>
         </header>
 
-        <section class="chat-thread" aria-label="Conversation placeholder">
-          <article class="message system">
-            <p class="role">System</p>
-            <p>Phase 8 foundation active. Desktop and web shells now align on layout primitives.</p>
+        <section class="messages" aria-label="Conversation">
+          <article class="message-row user-row">
+            <div class="msg-avatar user-avatar">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-3.3 0-6 1.8-6 4v1h12v-1c0-2.2-2.7-4-6-4z" /></svg>
+            </div>
+            <div class="message-bubble user-bubble">Summarize all active providers and keep local inference first.</div>
           </article>
-          <article class="message user">
-            <p class="role">User</p>
-            <p>Show model install status and available providers.</p>
-          </article>
-          <article class="message assistant">
-            <p class="role">Assistant</p>
-            <p>Placeholder response region for upcoming tool-use and gateway panels.</p>
+          <article class="message-row bot-row">
+            <div class="msg-avatar bot-avatar">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 2h6v2h-2v2h4a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3h4V4H9V2zm1 8a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm4 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm-5 6h6v1H9v-1z" /></svg>
+            </div>
+            <div class="message-bubble bot-bubble">Local providers are prioritized. BANKR gateway is enabled with quota controls and MCP context for docs, code, and GitHub repositories.</div>
           </article>
         </section>
 
-        <footer class="composer" aria-label="Composer placeholder">
-          <div class="input">Type a prompt or slash command...</div>
-          <button type="button">Send</button>
+        <footer class="chat-compose">
+          <div class="compose-input">
+            <input type="text" placeholder="Type your message..." />
+            <button type="button" class="icon-button" aria-label="Attach file">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5 6.5l-7.8 7.8a3 3 0 0 0 4.2 4.2l7.1-7.1a5 5 0 1 0-7.1-7.1L5 12.1" /></svg>
+            </button>
+            <button type="button" class="icon-button" aria-label="Voice input">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3 3 0 0 0 3-3V7a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.9V22h2v-3.1A7 7 0 0 0 19 12h-2z" /></svg>
+            </button>
+          </div>
+          <button type="button" class="send-btn">Send</button>
         </footer>
       </main>
 
-      <aside class="right-rail" aria-label="Context and diagnostics">
-        <section class="stack-card">
-          <h3>Runtime</h3>
-          <p>Server: <code>/health</code></p>
-          <p>API: <code>/v1/*</code></p>
+      <aside class="settings-panel" aria-label="Runtime settings">
+        <section class="settings-card">
+          <h3>BANKR LLM GATEWAY</h3>
+          <div class="card-line">
+            <span class="line-label">Gateway</span>
+            <svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.4 13a7.9 7.9 0 0 0 0-2l2-1.5-2-3.4-2.4 1a7.5 7.5 0 0 0-1.7-1l-.3-2.5h-4l-.3 2.5c-.6.2-1.2.5-1.7 1l-2.4-1-2 3.4L4.6 11a7.9 7.9 0 0 0 0 2l-2 1.5 2 3.4 2.4-1c.5.4 1.1.8 1.7 1l.3 2.5h4l.3-2.5c.6-.2 1.2-.6 1.7-1l2.4 1 2-3.4-2-1.5zM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5z" /></svg>
+          </div>
+          <label class="field">
+            <span>Provider</span>
+            <select>
+              <option>BANKR Cloud</option>
+              <option>Local fallback</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Access Key</span>
+            <div class="secure-input">
+              <input type="password" value="••••••••••••••••" />
+              <button type="button" class="icon-button" aria-label="Toggle key visibility">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6c5.3 0 9.3 5 9.8 5.6l.2.3-.2.3C21.3 12.9 17.3 18 12 18S2.7 12.9 2.2 12.2L2 12l.2-.3C2.7 11 6.7 6 12 6zm0 2c-3.5 0-6.4 2.9-7.6 4 1.2 1.1 4.1 4 7.6 4s6.4-2.9 7.6-4c-1.2-1.1-4.1-4-7.6-4zm0 1.8a2.2 2.2 0 1 1 0 4.4 2.2 2.2 0 0 1 0-4.4z" /></svg>
+              </button>
+            </div>
+          </label>
+          <div class="quota-block">
+            <div class="quota-copy">
+              <span>Usage quota</span>
+              <span>68%</span>
+            </div>
+            <div class="progress"><span style="width: 68%"></span></div>
+          </div>
+          <button type="button" class="section-btn">Cost Settings</button>
         </section>
 
-        <section class="stack-card">
-          <h3>Provider Panel</h3>
-          <p>DARKSOL local models</p>
-          <p>Ollama fallback</p>
-          <p>Bankr gateway placeholder</p>
+        <section class="settings-card">
+          <h3>MCP USE (MODEL CONTEXT PROTOCOL)</h3>
+          <div class="toggle-row">
+            <span>Enable MCP</span>
+            <label class="switch">
+              <input type="checkbox" checked />
+              <span></span>
+            </label>
+          </div>
+          <ul class="source-list">
+            <li>
+              <div class="source-main">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a2 2 0 0 1 2 2v14l-4-2-4 2-4-2-4 2V5a2 2 0 0 1 2-2z" /></svg>
+                <span>Documentation</span>
+              </div>
+              <button type="button" class="icon-button" aria-label="Source options">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm0 5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm0 5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z" /></svg>
+              </button>
+            </li>
+            <li>
+              <div class="source-main">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v3H4V6zm0 5h16v3H4v-3zm0 5h10v3H4v-3z" /></svg>
+                <span>Project Code base</span>
+              </div>
+              <button type="button" class="icon-button" aria-label="Source options">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm0 5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm0 5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z" /></svg>
+              </button>
+            </li>
+            <li>
+              <div class="source-main">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-3.2 19.5c.5.1.7-.2.7-.5v-1.9c-2.9.6-3.5-1.2-3.5-1.2-.5-1.1-1.1-1.4-1.1-1.4-.9-.6.1-.6.1-.6 1 .1 1.6 1 1.6 1 .9 1.6 2.4 1.1 2.9.8.1-.7.3-1.1.6-1.4-2.3-.3-4.7-1.1-4.7-5a3.9 3.9 0 0 1 1-2.7 3.7 3.7 0 0 1 .1-2.7s.8-.2 2.8 1a9.8 9.8 0 0 1 5 0c2-1.2 2.8-1 2.8-1 .4.8.4 1.8.1 2.7a3.9 3.9 0 0 1 1 2.7c0 3.9-2.4 4.7-4.7 5 .4.3.7.9.7 1.9V21c0 .3.2.6.7.5A10 10 0 0 0 12 2z" /></svg>
+                <span>GitHub Repos</span>
+              </div>
+              <button type="button" class="icon-button" aria-label="Source options">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm0 5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm0 5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z" /></svg>
+              </button>
+            </li>
+          </ul>
+          <button type="button" class="section-btn">Add Source</button>
         </section>
 
-        <section class="stack-card">
-          <h3>Desktop Pack</h3>
-          <p>Windows: <code>desktop/config/packaging.win.json</code></p>
-          <p>macOS: <code>desktop/config/packaging.mac.json</code></p>
+        <section class="settings-card">
+          <h3>TOOL USE</h3>
+          <div class="toggle-row">
+            <span>Enable tools</span>
+            <label class="switch">
+              <input type="checkbox" checked />
+              <span></span>
+            </label>
+          </div>
+          <label class="field">
+            <span>Function Calling</span>
+            <select>
+              <option>Auto</option>
+              <option>Manual</option>
+            </select>
+          </label>
+          <label class="checkline">
+            <input type="checkbox" checked />
+            <span>Code Execution</span>
+          </label>
+          <label class="checkline">
+            <input type="checkbox" />
+            <span>File Access</span>
+          </label>
+          <button type="button" class="section-btn">Configure Tools</button>
         </section>
       </aside>
     </div>
