@@ -49,12 +49,12 @@ select {
 
 .app-shell {
   max-width: 1680px;
-  min-width: 1200px;
+  min-width: 1000px;
   min-height: 100vh;
   margin: 0 auto;
   padding: 14px;
   display: grid;
-  grid-template-columns: 64px 250px minmax(0, 1fr) 280px;
+  grid-template-columns: 56px 210px minmax(0, 1fr) 240px;
   gap: 12px;
 }
 
@@ -677,10 +677,10 @@ select {
   accent-color: var(--primary);
 }
 
-@media (max-width: 1300px) {
+@media (max-width: 1100px) {
   .app-shell {
     min-width: 0;
-    grid-template-columns: 64px 1fr;
+    grid-template-columns: 56px 1fr 240px;
   }
 
   .models-panel {
@@ -692,7 +692,16 @@ select {
   }
 
   .settings-panel {
-    grid-column: 1 / 3;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-column: 3 / 4;
+  }
+}
+
+@media (max-width: 800px) {
+  .app-shell {
+    grid-template-columns: 56px 1fr;
+  }
+
+  .settings-panel {
+    display: none;
   }
 }
