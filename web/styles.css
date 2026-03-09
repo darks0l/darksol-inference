@@ -705,3 +705,125 @@ select {
     display: none;
   }
 }
+
+/* Toast notifications */
+.toast-container {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toast {
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  animation: toast-in 0.25s ease;
+}
+
+.toast-error {
+  border-color: #ef4444;
+  color: #fca5a5;
+}
+
+.toast-fade {
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+@keyframes toast-in {
+  from { transform: translateX(40px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* Empty chat state */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  gap: 12px;
+}
+
+.empty-icon {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary-light);
+  background: var(--surface-elevated);
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* Error bubble */
+.error-bubble {
+  color: #fca5a5 !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+}
+
+/* Typing indicator */
+.typing-indicator {
+  animation: typing-pulse 1.2s ease-in-out infinite;
+  letter-spacing: 3px;
+  color: var(--text-muted);
+}
+
+@keyframes typing-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+/* Model section labels */
+.model-section-label {
+  list-style: none;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  padding: 10px 0 4px;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+}
+
+.model-section-label:first-child {
+  border-top: none;
+  margin-top: 0;
+}
+
+/* Tree collapse */
+.tree-block.collapsed .model-list,
+.tree-block.collapsed .tree-subhead {
+  display: none;
+}
+
+.tree-block.collapsed .tree-head svg {
+  transform: rotate(-90deg);
+}
+
+/* Settings panel hide toggle */
+.panel-hidden {
+  display: none !important;
+}
+
+/* Small switch variant for MCP toggles */
+.switch-sm {
+  transform: scale(0.8);
+  margin-left: auto;
+}
