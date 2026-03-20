@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.4.0
+- **Deep Agent — full autonomous coding agent system.** Zero-dependency agent loop with tool calling, planning, summarization, skills, memory, and sub-agent spawning. Inspired by deepagents/Claude Code architecture but built entirely in vanilla Node.js.
+- **`darksol agent` CLI command** — one-shot and interactive modes. Verbose tool display, todo list summary, iteration + token stats.
+- **`POST /v1/agent/run` API** — streaming SSE and non-streaming. `GET /v1/agent/tools` lists available tools.
+- **Filesystem tools:** `ls`, `read_file` (paginated), `write_file`, `edit_file` (surgical), `glob`, `grep` (recursive with regex).
+- **Shell execution:** `execute` with timeout, output capture, dangerous-command blocklist.
+- **Planning middleware:** `write_todos` tool — persistent task lists with pending/in_progress/completed states, injected into system prompt.
+- **Auto-summarization:** Monitors context usage (85% threshold), compresses old messages, offloads full history to `~/.darksol/conversation_history/`, keeps 10% of context. Safe cutoff avoids splitting AI/tool message pairs.
+- **Skills middleware:** Discovers SKILL.md files from `~/.darksol/skills/` and `./skills/`, progressive disclosure (name+desc only in prompt), lazy load on demand. Compatible with Agent Skills spec + OpenClaw skills.
+- **Memory middleware:** Loads AGENTS.md from `~/.darksol/AGENTS.md` and `./AGENTS.md`, injects as persistent context. Agent can update via `edit_file`. Compatible with agents.md spec.
+- **Sub-agent middleware:** `task` tool spawns isolated child agents with fresh context windows. General-purpose default + custom named agents. Parallel execution supported. State isolation (no shared context).
+- **170/170 tests passing** (68 new agent tests added).
+
 ## 0.3.1
 - Added CLI alias `darksol-studio` while keeping install and package name unchanged (`npm i -g darksol`).
 - Updated docs + landing examples to prefer `darksol-studio ...` commands and note `darksol ...` remains supported.
