@@ -7,7 +7,7 @@ test("cli registers expected commands", () => {
   const names = cli.commands.map((cmd) => cmd.name());
   assert.deepEqual(
     names.sort(),
-    ["browse", "info", "keepwarm", "list", "mcp", "ps", "pull", "rm", "run", "runtime", "search", "serve", "status", "usage"].sort()
+    ["agent", "browse", "info", "keepwarm", "list", "mcp", "ps", "pull", "rm", "run", "runtime", "search", "serve", "status", "usage"].sort()
   );
 });
 

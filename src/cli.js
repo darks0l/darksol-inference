@@ -13,6 +13,7 @@ import { registerUsageCommand } from "./commands/usage.js";
 import { registerMcpCommand } from "./commands/mcp.js";
 import { registerRuntimeCommand } from "./commands/runtime.js";
 import { registerKeepWarmCommand } from "./commands/keepwarm.js";
+import { registerAgentCommand } from "./commands/agent.js";
 
 export function createCli(deps = {}) {
   const program = new Command();
@@ -35,6 +36,7 @@ export function createCli(deps = {}) {
   registerMcpCommand(program, deps.mcp);
   registerRuntimeCommand(program, deps.runtime);
   registerKeepWarmCommand(program, deps.keepwarm);
+  registerAgentCommand(program);
 
   return program;
 }

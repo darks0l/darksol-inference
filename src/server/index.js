@@ -14,6 +14,7 @@ import { registerAppRoutes } from "./routes/app.js";
 import { registerMcpRoutes } from "./routes/mcp.js";
 import { registerRuntimeRoutes } from "./routes/runtime.js";
 import { registerWalletRoutes } from "./routes/wallet.js";
+import { registerAgentRoutes } from "./routes/agent.js";
 import { logger } from "../lib/logger.js";
 import { loadConfig } from "../lib/config.js";
 import { createOllamaClient } from "../providers/ollama.js";
@@ -115,6 +116,7 @@ export async function buildServer({
     keepWarmScheduler: resolvedKeepWarmScheduler
   });
   await registerWalletRoutes(fastify, { fetchImpl });
+  await registerAgentRoutes(fastify);
   await registerAppRoutes(fastify, { readUsageStats: readUsageStatsFn });
   await registerChatRoutes(fastify, {
     ollamaClient,
