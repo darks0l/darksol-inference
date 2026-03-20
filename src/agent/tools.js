@@ -204,7 +204,7 @@ export const TOOL_DEFINITIONS = [
  * Execute a tool call and return the result.
  * @param {string} name - Tool name
  * @param {object} args - Tool arguments
- * @param {object} agentState - Shared agent state (for todos, etc.)
+ * @param {object} agentState - Shared agent state (for todos, subagentExecutor, etc.)
  * @returns {Promise<string>} Tool result text
  */
 export async function executeTool(name, args, agentState = {}) {
@@ -258,6 +258,17 @@ export async function executeTool(name, args, agentState = {}) {
           return `${icon} ${t.content}`;
         }).join("\n");
         return `Task list updated:\n${summary}`;
+      }
+
+      case "task": {
+        // Sub-agent task execution
+        if (agentState.subagentExecutor) {
+          return await agentState.subagentExecutor.execute(
+            args.subagent_type,
+            args.description,
+          );
+        }
+        return "Sub-agent executor not available. Enable subagents in agent config.";
       }
 
       default:

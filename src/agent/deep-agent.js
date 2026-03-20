@@ -13,6 +13,7 @@ import { createTodoManager } from "./middleware/todos.js";
 import { createSummarizationManager } from "./middleware/summarization.js";
 import { createSkillsManager } from "./middleware/skills.js";
 import { createMemoryManager } from "./middleware/memory.js";
+import { createSubAgentExecutor } from "./middleware/subagents.js";
 
 /** Max iterations before hard stop (prevents infinite loops) */
 const MAX_ITERATIONS = 100;
@@ -33,6 +34,8 @@ const CHARS_PER_TOKEN = 4;
  * @property {string[]} [skillSources] - Custom skill source paths
  * @property {boolean} [memory] - Enable AGENTS.md memory (default: true)
  * @property {string[]} [memorySources] - Custom memory file paths
+ * @property {boolean} [subagents] - Enable sub-agent spawning (default: false)
+ * @property {Array} [subagentSpecs] - Custom sub-agent specifications
  * @property {number} [contextWindowTokens] - Context window size for summarization
  * @property {boolean} [verbose] - Log each step (default: false)
  * @property {function} [onStep] - Callback for each step: (type, data) => void
@@ -69,6 +72,8 @@ export function createDarksolAgent(config = {}) {
     skillSources,
     memory: enableMemory = true,
     memorySources,
+    subagents: enableSubagents = false,
+    subagentSpecs = [],
     contextWindowTokens,
     verbose = false,
     onStep,
@@ -102,10 +107,19 @@ export function createDarksolAgent(config = {}) {
     sources: memorySources,
   }) : null;
 
+  const subagentExecutor = enableSubagents ? createSubAgentExecutor({
+    subagents: subagentSpecs,
+    apiBase,
+    apiKey,
+    model,
+    maxIterations: Math.floor(maxIterations / 2), // Sub-agents get half the budget
+  }) : null;
+
   // Shared state across the agent's lifetime
   const agentState = {
     get todos() { return todoManager.todos; },
     set todos(v) { todoManager.set(v); },
+    subagentExecutor, // Exposed for tool executor
     conversationHistory: [],
     iterationCount: 0,
   };
@@ -173,10 +187,16 @@ export function createDarksolAgent(config = {}) {
     const systemMsg = buildSystemPrompt({
       userPrompt,
       planning,
+      subagents: enableSubagents,
       todos: todoManager.todos.length > 0 ? todoManager.todos : undefined,
       skillsSection: _skillsSection,
       memorySection: _memorySection,
     });
+
+    // Build active tool list (base tools + task tool if sub-agents enabled)
+    const activeTools = enableSubagents && subagentExecutor
+      ? [...TOOL_DEFINITIONS, subagentExecutor.toolDefinition]
+      : TOOL_DEFINITIONS;
 
     const fullMessages = [
       { role: "system", content: systemMsg },
@@ -186,7 +206,7 @@ export function createDarksolAgent(config = {}) {
     const body = {
       model: model === "auto" ? undefined : model,
       messages: fullMessages,
-      tools: TOOL_DEFINITIONS,
+      tools: activeTools,
       temperature,
       stream,
     };
