@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "DARKSOL Inference API",
-    "version": "0.3.1",
+    "version": "0.4.0",
     "description": "Local inference server with OpenAI-compatible endpoints and static shell assets."
   },
   "servers": [
@@ -972,6 +972,45 @@
           },
           "500": {
             "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/agent/run": {
+      "post": {
+        "summary": "Execute a deep agent task with autonomous tool calling",
+        "responses": {
+          "200": {
+            "description": "Agent result or SSE event stream"
+          },
+          "400": {
+            "description": "Request validation error"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/agent/tools": {
+      "get": {
+        "summary": "List available deep agent tools",
+        "responses": {
+          "200": {
+            "description": "Tool definitions"
           }
         },
         "security": [

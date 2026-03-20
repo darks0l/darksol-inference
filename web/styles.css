@@ -373,6 +373,41 @@ select {
   color: #c8a6ff;
 }
 
+.ghost-btn.agent-toggle {
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.ghost-btn.agent-toggle.active {
+  background: #1a3a2a;
+  border-color: #2ecc71;
+  color: #2ecc71;
+}
+
+.agent-event {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 4px 8px;
+  margin: 2px 0;
+  border-left: 2px solid var(--border);
+  font-family: monospace;
+}
+
+.agent-event.tool-call {
+  border-left-color: #3498db;
+  color: #7ec8e3;
+}
+
+.agent-event.tool-result {
+  border-left-color: #27ae60;
+  color: #7dcea0;
+}
+
+.agent-event.thinking {
+  border-left-color: #f39c12;
+  color: #f5cba7;
+  font-style: italic;
+}
+
 .messages {
   border: 1px solid var(--border);
   border-radius: 12px;

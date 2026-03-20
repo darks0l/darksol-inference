@@ -62,6 +62,7 @@
     mcpServers: [],
     runtimeStatus: null,
     usage: null,
+    agentMode: false,
     bankrConfig: {
       enabled: false,
       baseUrl: "https://llm.bankr.bot",
@@ -250,6 +251,18 @@
     if (newChatBtn) newChatBtn.addEventListener("click", clearChat);
     if (deleteChatBtn) deleteChatBtn.addEventListener("click", clearChat);
 
+    // Agent mode toggle
+    const agentToggle = $(".agent-toggle");
+    if (agentToggle) {
+      agentToggle.addEventListener("click", () => {
+        state.agentMode = !state.agentMode;
+        agentToggle.classList.toggle("active", state.agentMode);
+        const sub = $(".chat-model-sub");
+        if (sub) sub.textContent = state.agentMode ? "🤖 Agent mode" : "Active model";
+        toast(state.agentMode ? "Agent mode ON — autonomous tools enabled" : "Agent mode OFF — standard chat", "info");
+      });
+    }
+
     // Clear placeholder messages
     clearChat();
   }
@@ -335,15 +348,29 @@
     let fullText = "";
 
     try {
-      const res = await fetch(`${API_BASE}/v1/chat/completions`, {
+      // Route through agent API or standard chat
+      const endpoint = state.agentMode
+        ? `${API_BASE}/v1/agent/run`
+        : `${API_BASE}/v1/chat/completions`;
+
+      const body = state.agentMode
+        ? {
+            message: text,
+            model: state.selectedModel,
+            stream: true,
+            planning: true,
+          }
+        : {
+            model: state.selectedModel,
+            route: state.selectedModel.startsWith("bankr/") ? "bankr" : (state.bankrConfig.defaultRoute || "local"),
+            messages: state.messages,
+            stream: true,
+          };
+
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: state.selectedModel,
-          route: state.selectedModel.startsWith("bankr/") ? "bankr" : (state.bankrConfig.defaultRoute || "local"),
-          messages: state.messages,
-          stream: true,
-        }),
+        body: JSON.stringify(body),
         signal: controller.signal,
       });
 
@@ -372,12 +399,43 @@
 
           try {
             const chunk = JSON.parse(payload);
-            const delta = chunk?.choices?.[0]?.delta?.content;
-            if (delta) {
-              fullText += delta;
-              bubble.textContent = fullText;
+
+            if (state.agentMode) {
+              // Agent mode: events have {type, data} structure
+              const evType = chunk.type;
+              const evData = chunk.data || {};
               const msgContainer = $(".messages");
+
+              if (evType === "thinking") {
+                bubble.innerHTML = '<span class="typing-indicator">🧠 thinking...</span>';
+              } else if (evType === "tool_call") {
+                const argsPreview = JSON.stringify(evData.args || {}).substring(0, 80);
+                const ev = document.createElement("div");
+                ev.className = "agent-event tool-call";
+                ev.textContent = `🔧 ${evData.name} ${argsPreview}`;
+                if (bubble.parentElement) bubble.parentElement.parentElement.insertBefore(ev, bubble.parentElement.parentElement.lastChild);
+                bubble.innerHTML = '<span class="typing-indicator">⏳ executing...</span>';
+              } else if (evType === "tool_result") {
+                const preview = (evData.result || "").substring(0, 120).replace(/\n/g, " ");
+                const ev = document.createElement("div");
+                ev.className = "agent-event tool-result";
+                ev.textContent = `📋 ${preview}`;
+                if (bubble.parentElement) bubble.parentElement.parentElement.insertBefore(ev, bubble.parentElement.parentElement.lastChild);
+              } else if (evType === "response" || evType === "done") {
+                fullText = evData.response || evData.content || fullText;
+                bubble.textContent = fullText;
+              }
+
               if (msgContainer) msgContainer.scrollTop = msgContainer.scrollHeight;
+            } else {
+              // Standard chat: OpenAI format
+              const delta = chunk?.choices?.[0]?.delta?.content;
+              if (delta) {
+                fullText += delta;
+                bubble.textContent = fullText;
+                const msgContainer = $(".messages");
+                if (msgContainer) msgContainer.scrollTop = msgContainer.scrollHeight;
+              }
             }
           } catch { /* skip malformed chunks */ }
         }

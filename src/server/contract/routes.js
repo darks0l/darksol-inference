@@ -557,6 +557,27 @@ export const ROUTE_CONTRACT = [
       404: "Model not found",
       500: "Internal server error"
     }
+  },
+  {
+    method: "POST",
+    path: "/v1/agent/run",
+    summary: "Execute a deep agent task with autonomous tool calling",
+    auth: "bearer",
+    responses: {
+      200: "Agent result or SSE event stream",
+      400: "Request validation error",
+      401: "Missing or invalid API key",
+      500: "Internal server error"
+    }
+  },
+  {
+    method: "GET",
+    path: "/v1/agent/tools",
+    summary: "List available deep agent tools",
+    auth: "bearer",
+    responses: {
+      200: "Tool definitions"
+    }
   }
 ];
 
