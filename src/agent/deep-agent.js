@@ -9,6 +9,10 @@
 
 import { TOOL_DEFINITIONS, executeTool } from "./tools.js";
 import { buildSystemPrompt } from "./prompts.js";
+import { createTodoManager } from "./middleware/todos.js";
+import { createSummarizationManager } from "./middleware/summarization.js";
+import { createSkillsManager } from "./middleware/skills.js";
+import { createMemoryManager } from "./middleware/memory.js";
 
 /** Max iterations before hard stop (prevents infinite loops) */
 const MAX_ITERATIONS = 100;
@@ -25,6 +29,11 @@ const CHARS_PER_TOKEN = 4;
  * @property {number} [maxIterations] - Max tool-call loops (default: 100)
  * @property {number} [temperature] - Temperature (default: 0)
  * @property {boolean} [planning] - Enable planning/todos (default: true)
+ * @property {boolean} [skills] - Enable skill loading (default: true)
+ * @property {string[]} [skillSources] - Custom skill source paths
+ * @property {boolean} [memory] - Enable AGENTS.md memory (default: true)
+ * @property {string[]} [memorySources] - Custom memory file paths
+ * @property {number} [contextWindowTokens] - Context window size for summarization
  * @property {boolean} [verbose] - Log each step (default: false)
  * @property {function} [onStep] - Callback for each step: (type, data) => void
  * @property {function} [onToken] - Streaming callback: (token) => void
@@ -56,6 +65,11 @@ export function createDarksolAgent(config = {}) {
     maxIterations = MAX_ITERATIONS,
     temperature = 0,
     planning = true,
+    skills: enableSkills = true,
+    skillSources,
+    memory: enableMemory = true,
+    memorySources,
+    contextWindowTokens,
     verbose = false,
     onStep,
     onToken,
@@ -63,16 +77,82 @@ export function createDarksolAgent(config = {}) {
     signal,
   } = config;
 
+  // Set working directory
+  if (cwd) {
+    try { process.chdir(cwd); } catch { /* ignore */ }
+  }
+
+  // Initialize middleware
+  const todoManager = createTodoManager();
+
+  const summarizer = createSummarizationManager({
+    contextWindowTokens,
+    // LLM call for summarization (wired in after init)
+    llmCall: async (messages) => {
+      const resp = await callLLMRaw(messages);
+      return resp?.message?.content || "Summary unavailable.";
+    },
+  });
+
+  const skillsManager = enableSkills ? createSkillsManager({
+    sources: skillSources,
+  }) : null;
+
+  const memoryManager = enableMemory ? createMemoryManager({
+    sources: memorySources,
+  }) : null;
+
   // Shared state across the agent's lifetime
   const agentState = {
-    todos: [],
+    get todos() { return todoManager.todos; },
+    set todos(v) { todoManager.set(v); },
     conversationHistory: [],
     iterationCount: 0,
   };
 
-  // Set working directory
-  if (cwd) {
-    try { process.chdir(cwd); } catch { /* ignore */ }
+  // Cache for middleware sections (loaded once per session)
+  let _skillsSection = null;
+  let _memorySection = null;
+  let _middlewareLoaded = false;
+
+  async function loadMiddlewareSections() {
+    if (_middlewareLoaded) return;
+    _middlewareLoaded = true;
+    if (skillsManager) {
+      _skillsSection = await skillsManager.getPromptSection().catch(() => "");
+    }
+    if (memoryManager) {
+      _memorySection = await memoryManager.getPromptSection().catch(() => "");
+    }
+  }
+
+  /**
+   * Raw LLM call without system prompt injection (for summarization).
+   * @param {Array<Object>} messages
+   * @returns {Promise<Object>}
+   */
+  async function callLLMRaw(messages) {
+    const body = {
+      model: model === "auto" ? undefined : model,
+      messages,
+      temperature: 0.3,
+      stream: false,
+    };
+    const headers = { "Content-Type": "application/json" };
+    if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
+    try {
+      const response = await fetch(`${apiBase}/v1/chat/completions`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body),
+        signal,
+      });
+      if (!response.ok) return null;
+      const data = await response.json();
+      return { message: data.choices?.[0]?.message };
+    } catch {
+      return null;
+    }
   }
 
   /**
@@ -82,15 +162,25 @@ export function createDarksolAgent(config = {}) {
    * @returns {Promise<Object>} Response with message and optional tool_calls
    */
   async function callLLM(messages, stream = false) {
+    // Load middleware sections on first call
+    await loadMiddlewareSections();
+
+    // Apply summarization if needed
+    const effectiveMessages = summarizer.shouldSummarize(messages)
+      ? await summarizer.summarize(messages)
+      : messages;
+
     const systemMsg = buildSystemPrompt({
       userPrompt,
       planning,
-      todos: agentState.todos,
+      todos: todoManager.todos.length > 0 ? todoManager.todos : undefined,
+      skillsSection: _skillsSection,
+      memorySection: _memorySection,
     });
 
     const fullMessages = [
       { role: "system", content: systemMsg },
-      ...messages,
+      ...effectiveMessages,
     ];
 
     const body = {
@@ -323,9 +413,10 @@ export function createDarksolAgent(config = {}) {
       return {
         response: lastAssistant?.content || "(Agent completed without a text response)",
         messages: agentState.conversationHistory,
-        todos: agentState.todos.length > 0 ? agentState.todos : undefined,
+        todos: todoManager.todos.length > 0 ? todoManager.todos : undefined,
         iterations,
         totalTokensEstimate: estimateTokens(),
+        historyPath: summarizer.getHistoryPath(),
       };
     },
 
@@ -417,14 +508,33 @@ export function createDarksolAgent(config = {}) {
 
     /** Get current todos */
     getTodos() {
-      return agentState.todos;
+      return todoManager.todos;
+    },
+
+    /** Get skills manager */
+    getSkillsManager() {
+      return skillsManager;
+    },
+
+    /** Get memory manager */
+    getMemoryManager() {
+      return memoryManager;
+    },
+
+    /** Get summarization manager */
+    getSummarizationManager() {
+      return summarizer;
     },
 
     /** Reset agent state */
     reset() {
       agentState.conversationHistory = [];
-      agentState.todos = [];
       agentState.iterationCount = 0;
+      todoManager.set([]);
+      summarizer.reset();
+      _middlewareLoaded = false;
+      _skillsSection = null;
+      _memorySection = null;
     },
   };
 }
